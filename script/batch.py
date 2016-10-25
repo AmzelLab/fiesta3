@@ -120,7 +120,7 @@ class BatchFile(object):
     def file(self):
         """Call this method to get the file generated.
         """
-        with open(self._file_name) as batch_file:
+        with open(self._file_name, 'w+') as batch_file:
             batch_file.write(self._header())
             batch_file.write(self._environments())
             batch_file.write(self._binary())
