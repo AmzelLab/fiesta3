@@ -54,7 +54,8 @@ class Remote(object):
             A string list contains the job status returned by remote
         """
         self.__logger.info("Querying job_status on remote.")
-        status = self.__run_command(["ssh", self.__server, "sqme"])
+        status = self.__run_command(
+            ["ssh -o ControlMaster=no", self.__server, "sqme"])
         job_status = status.split("\n")[2:]
         job_status.pop()
 
@@ -63,7 +64,8 @@ class Remote(object):
     def current_remote_time(self):
         """Returns the current time of remote"""
         self.__logger.info("Querying current time on remote.")
-        return self.__run_command(["ssh", self.__server, "date"])
+        return self.__run_command(["ssh -o ControlMaster=no",
+                                   self.__server, "date"])
 
     def expect_completion_time(self, job_id, working_folder):
         """Returns the expect completion time of a job
@@ -75,9 +77,8 @@ class Remote(object):
             A string that contains the expect completion time of job_id.
         """
         self.__logger.info("Querying expect completion time on remote.")
-        command_str = "ssh %s 'tail -1 %s/%s'" % (self.__server,
-                                                  working_folder,
-                                                  "slurm-%s.out" % job_id)
+        command_str = "ssh -o ControlMaster=no %s 'tail -1 %s/%s'" % \
+            (self.__server, working_folder, "slurm-%s.out" % job_id)
         result = self.__run_command(command_str.split())
         re_list = result.split()
         if len(re_list) == 0 or re_list[0] != "imb":
@@ -97,9 +98,9 @@ class Remote(object):
             The remote message.
         """
         self.__logger.info("Copy and submit to remote.")
-        remote_cp = "scp %s %s:%s" % (file_name, self.__server, remote_folder)
-        remote_submit = "ssh %s 'cd %s && sbatch %s'" % (self.__server,
-                                                         remote_folder,
-                                                         file_name)
+        remote_cp = "scp -o ControlMaster=no %s %s:%s" % (
+            file_name, self.__server, remote_folder)
+        remote_submit = "ssh -o ControlMaster=no %s 'cd %s && sbatch %s'" \
+            % (self.__server, remote_folder, file_name)
         self.__run_command(remote_cp.split())
         return self.__run_command(remote_submit.split())
