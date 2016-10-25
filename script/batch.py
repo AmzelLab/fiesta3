@@ -163,7 +163,7 @@ class GromacsBatchFile(BatchFile):
         """
         gpu_flag = ""
         for i in range(0, self._data["numOfGPUs"]):
-            gpu_flag += str(i) * (self._data["numOfProcs"] / \
+            gpu_flag += str(i) * int(self._data["numOfProcs"] / \
                 self._data["numOfGPUs"])
 
         return gpu_flag
