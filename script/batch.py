@@ -96,7 +96,7 @@ class BatchFile(object):
 
             header += "#SBATCH --gres=gpu:%d\n" % self._data["numOfGPUs"]
 
-        return header
+        return header + "\n#\n\n"
 
     @abstractmethod
     def _environments(self):
@@ -163,8 +163,8 @@ class GromacsBatchFile(BatchFile):
         """
         gpu_flag = ""
         for i in range(0, self._data["numOfGPUs"]):
-            gpu_flag += str(i) * self._data["numOfProcs"] / \
-                self._data["numOfGPUs"]
+            gpu_flag += str(i) * (self._data["numOfProcs"] / \
+                self._data["numOfGPUs"])
 
         return gpu_flag
 
