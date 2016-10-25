@@ -16,7 +16,7 @@ class BatchFile(object):
     """
     __metaclass__ = ABCMeta
 
-    REQUIRED = ["name", "timeLimit", "numOfNodes", "binaryFolder"
+    REQUIRED = ["name", "timeLimit", "numOfNodes", "binaryFolder",
                 "numOfProcs", "numOfThrs", "partition"]
 
     def __init__(self, data, file_name="batch"):
