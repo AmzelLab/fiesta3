@@ -45,7 +45,7 @@ class Remote(object):
             self.__logger.error("Remote command TIMEOUT: %s", command_string)
             return ""
 
-        return result
+        return result.decode("utf-8")
 
     def job_status(self):
         """Query job status through ssh.
@@ -65,7 +65,7 @@ class Remote(object):
         """Returns the current time of remote"""
         self.__logger.info("Querying current time on remote.")
         return self.__run_command(["ssh", "-o", "ControlMaster=no",
-                                   self.__server, "date"])
+                                   self.__server, "date"]).decode()
 
     def expect_completion_time(self, job_id, working_folder):
         """Returns the expect completion time of a job
