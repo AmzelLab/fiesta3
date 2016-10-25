@@ -7,6 +7,8 @@ from abc import abstractmethod
 from json import dump
 from json import load
 
+from concurrent.futures import ThreadPoolExecutor
+
 import logging
 
 from batch import GromacsBatchFile
@@ -36,10 +38,15 @@ class SubmitterBase(object):
         self._remote = Remote(remote)
 
     @abstractmethod
+    def _log_start(self):
+        """logging when engine starts"""
+        pass
+
+    @abstractmethod
     def run(self):
         """Run this submitter
         """
-        pass
+        self._log_start()
 
 
 class TestSubmitter(SubmitterBase):
@@ -56,12 +63,16 @@ class TestSubmitter(SubmitterBase):
         self.__logger = logging.getLogger(
             "auto_submitter.submitter.TestSubmitter")
 
+    def _log_start(self):
+        """logging when TestSubmitter engine starts"""
+        self.__logger.info("%s engine starts.", self.__class__.__name__)
+        self.__logger.info("managing %s", self._data["context"])
+        self.__logger.info("User: %s", self._data["userId"])
+
     def run(self):
         """Test run for submitter
         """
-        self.__logger.info("TestSubmitter engine starts.")
-        self.__logger.info("managing %s", self._data["context"])
-        self.__logger.info("User: %s", self._data["userId"])
+        super(TestSubmitter, self).run()
 
         # Accessing remote
         remote_time = self._remote.current_remote_time()
@@ -95,9 +106,30 @@ class AutoSubmitter(SubmitterBase):
         """
         super(AutoSubmitter, self).__init__(jobs_data, remote)
         self.__logger = logging.getLogger(
-            "auto_submitter.submitter.TestSubmitter")
+            "auto_submitter.submitter.AutoSubmitter")
+        self.__job_table = self._data["data"]["items"]
+
+    def __initialize(self):
+        """Initialize the internal job table."""
+        self.__logger.info("initializing...")
+        self.__logger.info("reading remote job status")
+
+        job_stats = self._remote.job_status()
+        print(job_stats)
+
+    def _log_start(self):
+        """logging when AutoSubmitter engine starts"""
+        self.__logger.info("%s engine starts.", self.__class__.__name__)
+        self.__logger.info("managing %s", self._data["context"])
+        self.__logger.info("User: %s", self._data["userId"])
 
     def run(self):
         """Run the scheduler to manage all jobs.
         """
-        pass
+        super(AutoSubmitter, self).run()
+
+        # Initiate jobs
+        self.__initialize()
+
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            pass

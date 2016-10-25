@@ -196,9 +196,11 @@ class GromacsBatchFile(BatchFile):
         Returns:
             a string env
         """
-        return "source %s/GMXRC\n" \
-               "export OMP_NUM_THREADS=%d\n" % (self._data["binaryPath"],
-                                                self._data["numOfThrs"])
+        return "source %s/GMXRC\n"           \
+               "export OMP_NUM_THREADS=%d\n" \
+               "cd %s\n" % (self._data["binaryPath"],
+                            self._data["numOfThrs"],
+                            self._data["directory"])
 
     def _binary(self):
         """Generate binary command line for Gromacs job.
