@@ -55,7 +55,7 @@ class Remote(object):
         """
         self.__logger.info("Querying job_status on remote.")
         status = self.__run_command(
-            ["ssh -o ControlMaster=no", self.__server, "sqme"])
+            ["ssh", "-o", "ControlMaster=no", self.__server, "sqme"])
         job_status = status.split("\n")[2:]
         job_status.pop()
 
@@ -64,7 +64,7 @@ class Remote(object):
     def current_remote_time(self):
         """Returns the current time of remote"""
         self.__logger.info("Querying current time on remote.")
-        return self.__run_command(["ssh -o ControlMaster=no",
+        return self.__run_command(["ssh", "-o", "ControlMaster=no",
                                    self.__server, "date"])
 
     def expect_completion_time(self, job_id, working_folder):
