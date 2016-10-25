@@ -11,9 +11,9 @@ Usage: Please run ./auto_submitter.py -h
 """
 
 from json import load
-
 import argparse
 import logging
+from time import strftime
 
 from submitter import AutoSubmitter
 from submitter import TestSubmitter
@@ -25,7 +25,8 @@ DESCRIPTION = "Batch Job Manager (Auto Submitter)"
 LOGGER = logging.getLogger('auto_submitter')
 LOGGER.setLevel(logging.DEBUG)
 
-FILE_HANDLER = logging.FileHandler('auto_submitter.log')
+LOG_FILE = 'auto_submitter_%s.log' % strftime('%X_%x')
+FILE_HANDLER = logging.FileHandler(LOG_FILE)
 FILE_HANDLER.setLevel(logging.DEBUG)
 
 FORMATTER = logging.Formatter(
