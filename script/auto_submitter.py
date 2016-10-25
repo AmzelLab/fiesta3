@@ -25,7 +25,7 @@ DESCRIPTION = "Batch Job Manager (Auto Submitter)"
 LOGGER = logging.getLogger('auto_submitter')
 LOGGER.setLevel(logging.DEBUG)
 
-LOG_FILE = 'auto_submitter_%s.log' % strftime('%X_%x')
+LOG_FILE = 'auto_submitter_%s.log' % strftime('%X_%d_%b_%Y')
 FILE_HANDLER = logging.FileHandler(LOG_FILE)
 FILE_HANDLER.setLevel(logging.DEBUG)
 
