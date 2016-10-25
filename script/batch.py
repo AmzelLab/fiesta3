@@ -96,7 +96,7 @@ class BatchFile(object):
 
             header += "#SBATCH --gres=gpu:%d\n" % self._data["numOfGPUs"]
 
-        return header + "\n#\n\n"
+        return header + "#\n\n"
 
     @abstractmethod
     def _environments(self):
@@ -197,8 +197,8 @@ class GromacsBatchFile(BatchFile):
             a string env
         """
         return "source %s/GMXRC\n" \
-               "export OMP_NUM_THREADS=%d" % (self._data["binaryPath"],
-                                              self._data["numOfThrs"])
+               "export OMP_NUM_THREADS=%d\n" % (self._data["binaryPath"],
+                                                self._data["numOfThrs"])
 
     def _binary(self):
         """Generate binary command line for Gromacs job.
@@ -206,7 +206,7 @@ class GromacsBatchFile(BatchFile):
         Returns:
             binary commands content of string type.
         """
-        grompp = "gmx_mpi grompp -f %s -o %s.tpr -c %s.gro -p topol.top" \
+        grompp = "gmx_mpi grompp -f %s -o %s.tpr -c %s.gro -p topol.top " \
                  "-n index.ndx" % (self._data["mdp"], self.__next_sec_name(),
                                    self.__curr_sec_name())
         if self._data["continuation"]:
