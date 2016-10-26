@@ -5,11 +5,15 @@ from abc import ABCMeta
 from abc import abstractmethod
 
 from json import dump
-from json import load
+
+from datetime import datetime
+import logging
+import sys
+
+from time import sleep
+from time import strftime
 
 from concurrent.futures import ThreadPoolExecutor
-
-import logging
 
 from batch import GromacsBatchFile
 from remote import Remote
@@ -102,6 +106,10 @@ class TestSubmitter(SubmitterBase):
 class AutoSubmitter(SubmitterBase):
     """Auto Submitter implementation"""
 
+    # Check status every half a hour.
+    CHECK_EVERY_N = 1800
+    NUM_THREADS = 8
+
     def __init__(self, jobs_data, remote):
         """Create an auto submitter object
 
@@ -112,7 +120,8 @@ class AutoSubmitter(SubmitterBase):
         super(AutoSubmitter, self).__init__(jobs_data, remote)
         self.__logger = logging.getLogger(
             "auto_submitter.submitter.AutoSubmitter")
-        self.__executor = ThreadPoolExecutor(max_workers=4)
+        self.__executor = ThreadPoolExecutor(
+            max_workers=AutoSubmitter.NUM_THREADS)
         self.__job_table = self._data["data"]["items"]
         self.__ids = {}
 
@@ -145,12 +154,22 @@ class AutoSubmitter(SubmitterBase):
             working_folder: The working folder for job_id
 
         Returns:
-            An int, time to completion in seconds.
+            Float type, time to completion in seconds.
         """
         remote_current = self._remote.current_remote_time()
         expt_completion = self._remote.expect_completion_time(job_id, work_dir)
-        print(remote_current)
-        print(expt_completion)
+
+        # If something wrong happens, we don't crash the script
+        # but make this job pending forever.
+        if remote_current == "" or expt_completion == "":
+            return sys.maxint
+
+        remote_curr_date = datetime.strptime(
+            remote_current, "%a %b %d %H:%M:%S EDT %Y")
+        expt_comp_date = datetime.strptime(
+            expt_completion, "%a %b %d %H:%M:%S %Y")
+
+        return int((expt_comp_date - remote_curr_date).total_seconds())
 
     def __get_job_stats(self):
         """put remote job status onto the internal data structure"""
@@ -160,8 +179,12 @@ class AutoSubmitter(SubmitterBase):
             if job[JOB_NAME] in self.__ids:
                 item = self.__job_table[self.__ids[job[JOB_NAME]]]
                 item["jobId"] = job[JOB_ID]
-                item["expCompletion"] = self.__time_to_completion(
+                time_to_completion_secs = self.__time_to_completion(
                     job[JOB_ID], item["directory"])
+
+                if time_to_completion_secs <= AutoSubmitter.CHECK_EVERY_N:
+                    self.__auto_resubmit_task(item["name"],
+                                              time_to_completion_secs)
 
     def __initialize(self):
         """Initialize the internal job table.
@@ -185,6 +208,47 @@ class AutoSubmitter(SubmitterBase):
         self.__logger.info("managing %s", self._data["context"])
         self.__logger.info("User: %s", self._data["userId"])
 
+    def __update_job_stats_task(self):
+        """Update job stats by accessing remote machine every n seconds.
+
+        This function defines an async callback as a task.
+        """
+        sleep(AutoSubmitter.CHECK_EVERY_N)
+        self.__logger.info("update job status from remote")
+        self.__get_job_stats()
+        self.__executor.submit(self.__update_job_stats_task)
+
+    def __dump_job_stats(self):
+        """Output the current job status as a json file."""
+        json_file_name = "jobs_%s.json" % strftime('%X_%d_%b_%Y')
+        dump(self._data, json_file_name)
+        self.__logger.info("dump current job stats to json: %s",
+                           json_file_name)
+
+    def __auto_resubmit_task(self, job_name, sleep_time):
+        """Resubmit a new job after some delays
+
+        Args:
+            job_name: the job we want to submit
+            sleep_time: delays in second
+        """
+        # make a local batch file
+        sleep(sleep_time)
+        self.__logger.info("submitting job %s.", job_name)
+        job_item = self.__job_table[self.__ids[job_name]]
+        file_name = job_item["name"] + '.sh'
+        GromacsBatchFile(job_item, file_name).file()
+        new_job_id = self._remote.copy_to_remote_and_submit(
+            file_name, job_item["directory"])
+
+        self.__logger.info("job submitted: %s section_id: %d",
+                           job_name, job_item["sectionNum"])
+
+        job_item["jobId"] = new_job_id
+        job_item["sectionNum"] += 1
+
+        self.__dump_job_stats()
+
     def run(self):
         """Run the scheduler to manage all jobs.
         """
@@ -193,3 +257,5 @@ class AutoSubmitter(SubmitterBase):
         # Initiate jobs
         if not self.__initialize():
             return
+
+        self.__executor.submit()
