@@ -16,6 +16,11 @@ from remote import Remote
 
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 
+# Define some constants
+JOB_ID = 1
+JOB_NAME = 2
+JOB_STAT = 4
+
 
 class SubmitterBase(object):
     """Jobs submitter implementation.
@@ -107,15 +112,70 @@ class AutoSubmitter(SubmitterBase):
         super(AutoSubmitter, self).__init__(jobs_data, remote)
         self.__logger = logging.getLogger(
             "auto_submitter.submitter.AutoSubmitter")
+        self.__executor = ThreadPoolExecutor(max_workers=4)
         self.__job_table = self._data["data"]["items"]
+        self.__ids = {}
+
+    def __checkin_items(self):
+        """check the formats of input job tables"""
+        index = 0
+        for item in self.__job_table:
+            if len(item["name"]) > 8:
+                self.__logger.critical("job name has a length > 8")
+                return False
+            self.__logger.info("put job %s in job table", item["name"])
+
+            if item["name"] in self.__ids:
+                self.__logger.critical("duplicate job name %s", item["name"])
+                return False
+
+            item["name"] = index
+            item["jobId"] = ""
+            item["expCompletion"] = 0
+            index += 1
+
+        return True
+
+    def __time_to_completion(self, job_id, work_dir):
+        """Get the time to completion for specific job_id
+
+        Args:
+            job_id: The remote sbatch's job id.
+            working_folder: The working folder for job_id
+
+        Returns:
+            An int, time to completion in seconds.
+        """
+        remote_current = self._remote.current_remote_time()
+        expt_completion = self._remote.expect_completion_time(job_id, work_dir)
+        print(remote_current)
+        print(expt_completion)
+
+    def __get_job_stats(self):
+        """put remote job status onto the internal data structure"""
+        job_stats = self._remote.job_status()
+
+        for job in job_stats:
+            item = self.__job_table[self.__ids[job[JOB_NAME]]]
+            item["jobId"] = job[JOB_ID]
+            item["expCompletion"] = self.__time_to_completion(
+                job[JOB_ID], item["directory"])
 
     def __initialize(self):
-        """Initialize the internal job table."""
+        """Initialize the internal job table.
+
+        Returns:
+            Boolean, is initialized.
+        """
         self.__logger.info("initializing...")
         self.__logger.info("reading remote job status")
 
-        job_stats = self._remote.job_status()
-        print(job_stats)
+        if not self.__checkin_items():
+            return False
+
+        self.__get_job_stats()
+
+        return True
 
     def _log_start(self):
         """logging when AutoSubmitter engine starts"""
@@ -129,7 +189,5 @@ class AutoSubmitter(SubmitterBase):
         super(AutoSubmitter, self).run()
 
         # Initiate jobs
-        self.__initialize()
-
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            pass
+        if not self.__initialize():
+            return

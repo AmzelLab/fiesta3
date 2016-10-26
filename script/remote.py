@@ -65,13 +65,14 @@ class Remote(object):
         """Returns the current time of remote"""
         self.__logger.info("Querying current time on remote.")
         return self.__run_command(["ssh", "-o", "ControlMaster=no",
-                                   self.__server, "date"]).decode()
+                                   self.__server, "date"])
 
     def expect_completion_time(self, job_id, working_folder):
         """Returns the expect completion time of a job
 
         Args:
             job_id: The remote sbatch's job id.
+            working_folder: The working folder for job_id
 
         Returns:
             A string that contains the expect completion time of job_id.
