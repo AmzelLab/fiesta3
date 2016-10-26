@@ -108,7 +108,7 @@ class AutoSubmitter(SubmitterBase):
     """Auto Submitter implementation"""
 
     # Check status every half a hour.
-    CHECK_EVERY_N = 1800
+    CHECK_EVERY_N = 60
     GAP_TIME = 0
     NUM_THREADS = 8
 

@@ -105,7 +105,7 @@ class Remote(object):
         self.__logger.info("Copy and submit [%s] to remote.", file_name)
         remote_cp = "scp -o ControlMaster=no %s %s:%s" % (
             file_name, self.__server, remote_folder)
-        remote_submit = "ssh -o ControlMaster=no %s sbatch %s/%s" \
+        remote_submit = "ssh -o ControlMaster=no %s cd %s && sbatch %s" \
             % (self.__server, remote_folder, file_name)
         self.__run_command(remote_cp.split())
         return self.__run_command(remote_submit.split())
