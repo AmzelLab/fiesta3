@@ -102,7 +102,7 @@ class Remote(object):
         Returns:
             The remote message.
         """
-        self.__logger.info("Copy and submit to remote.")
+        self.__logger.info("Copy and submit [%s] to remote.", file_name)
         remote_cp = "scp -o ControlMaster=no %s %s:%s" % (
             file_name, self.__server, remote_folder)
         remote_submit = "ssh -o ControlMaster=no %s sbatch %s/%s" \
