@@ -166,7 +166,7 @@ class AutoSubmitter(SubmitterBase):
         # If something wrong happens, we don't crash the script
         # but make this job pending forever.
         if remote_current == "" or expt_completion == "":
-            self.__logger("failed to obtain completion time.")
+            self.__logger.error("failed to obtain completion time.")
             return sys.maxint
 
         remote_curr_date = datetime.strptime(
@@ -271,8 +271,8 @@ class AutoSubmitter(SubmitterBase):
 
         # Initiate jobs
         if not self.__initialize():
-            self.__logger("failed to initialize all jobs.")
+            self.__logger.error("failed to initialize all jobs.")
             return
 
         self.__executor.submit(self.__update_job_stats_task)
-        self.__logger("terminating.")
+        self.__logger.info("terminating.")
