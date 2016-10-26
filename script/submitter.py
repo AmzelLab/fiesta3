@@ -108,7 +108,7 @@ class AutoSubmitter(SubmitterBase):
 
     # Check status every half a hour.
     CHECK_EVERY_N = 1800
-    GAP_TIME = 500
+    GAP_TIME = 0
     NUM_THREADS = 8
 
     def __init__(self, jobs_data, remote):
