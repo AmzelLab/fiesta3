@@ -55,7 +55,7 @@
       { "name": "e542k",
         "kind": "Gromacs",
         "binaryPath": "~/opt/bin",
-        "directory": "~/scratch/pi3k_new/e542ke545k/",
+        "directory": "~/scratch/pi3k_new/e542re545r/",
         "timeLimit": "24:0:0",
         "numOfNodes": 1,
         "numOfProcs": 4,

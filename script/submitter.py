@@ -247,8 +247,9 @@ class AutoSubmitter(SubmitterBase):
         if new_job_id == "":
             self.__logger.error("job submission failed [%s]", job_name)
         else:
-            self.__logger.info("job submitted: %s section_id: %d",
-                               job_name, job_item["sectionNum"])
+            self.__logger.info("job submitted: %s section_id: %d job_id: %s",
+                               job_name, job_item["sectionNum"],
+                               new_job_id)
 
         job_item["jobId"] = new_job_id
         job_item["sectionNum"] += 1
