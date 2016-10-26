@@ -140,7 +140,7 @@ class AutoSubmitter(SubmitterBase):
                 self.__logger.critical("duplicate job name %s", item["name"])
                 return False
 
-            item["name"] = index
+            self.__ids[item["name"]] = index
             item["jobId"] = ""
             item["expCompletion"] = 0
             index += 1
