@@ -15,7 +15,7 @@ __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 class Remote(object):
     """Handling remote status of jobs.
     """
-    TIMEOUT = 10
+    TIMEOUT = 20
 
     def __init__(self, server):
         """Creating a remote handler.
