@@ -174,7 +174,7 @@ class AutoSubmitter(SubmitterBase):
 
     def __get_job_stats(self):
         """put remote job status onto the internal data structure"""
-        job_stats = self._remote.job_status()
+        job_stats = self._remote.job_status(self._data["userId"])
 
         for job in job_stats:
             if job[JOB_NAME] in self.__ids:

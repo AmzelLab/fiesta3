@@ -51,7 +51,7 @@ class Remote(object):
 
         return result.decode("utf-8").rstrip("\n")
 
-    def job_status(self):
+    def job_status(self, user):
         """Query job status through ssh.
 
         Returns:
@@ -59,7 +59,8 @@ class Remote(object):
         """
         self.__logger.info("Querying job_status on remote.")
         status = self.__run_command(
-            ["ssh", "-o", "ControlMaster=no", self.__server, "sqme"])
+            ["ssh", "-o", "ControlMaster=no", self.__server,
+             "squeue", "-u", user])
         job_status = status.split("\n")[2:]
 
         return [job.lstrip().split() for job in job_status]
