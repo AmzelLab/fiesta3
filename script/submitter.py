@@ -10,6 +10,7 @@ from datetime import datetime
 import logging
 import sys
 
+from threading import Lock
 from time import sleep
 from time import strftime
 
@@ -123,6 +124,8 @@ class AutoSubmitter(SubmitterBase):
             "auto_submitter.submitter.AutoSubmitter")
         self.__executor = ThreadPoolExecutor(
             max_workers=AutoSubmitter.NUM_THREADS)
+        self.__lock = Lock()
+
         self.__job_table = self._data["data"]["items"]
         self.__ids = {}
 
@@ -223,12 +226,12 @@ class AutoSubmitter(SubmitterBase):
 
     def __dump_job_stats(self):
         """Output the current job status as a json file."""
-        json_file_name = "jobs_%s.json" % strftime('%X_%d_%b_%Y')
 
-        with open(json_file_name, 'w') as dump_file:
+        self.__lock.acquire()
+        with open("jobs_current.json", 'w') as dump_file:
             dump(self._data, dump_file)
-        self.__logger.info("dump current job stats to json: %s",
-                           json_file_name)
+        self.__logger.info("dump current job stats to json")
+        self.__lock.release()
 
     def __auto_resubmit_task(self, job_name, sleep_time):
         """Resubmit a new job after some delays
