@@ -20,7 +20,7 @@
         "mdp": "production.mdp",
         "continuation": true
       },
-      { "name": "pi3k-r38cr88q",
+      { "name": "r38cr88q",
         "kind": "Gromacs",
         "binaryPath": "~/opt/bin/",
         "directory": "~/scratch/pi3k_new/r38cr88q/",
@@ -36,7 +36,7 @@
         "mdp": "production.mdp",
         "continuation": true
       },
-      { "name": "pi3k-r38cr88qn345k",
+      { "name": "n345k",
         "kind": "Gromacs",
         "binaryPath": "~/opt/bin/",
         "directory": "~/scratch/pi3k_new/r38cr88qn345k/",
@@ -52,7 +52,7 @@
         "mdp": "production.mdp",
         "continuation": true
       },
-      { "name": "pi3k-e542ke545k",
+      { "name": "e542k",
         "kind": "Gromacs",
         "binaryPath": "~/opt/bin/",
         "directory": "~/scratch/pi3k_new/e542ke545k/",
