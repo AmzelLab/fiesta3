@@ -121,7 +121,8 @@ class AutoSubmitter(SubmitterBase):
         index = 0
         for item in self.__job_table:
             if len(item["name"]) > 8:
-                self.__logger.critical("job name has a length > 8 (%s)", item["name"])
+                self.__logger.critical(
+                    "job name has a length > 8 (%s)", item["name"])
                 return False
             self.__logger.info("put job %s in job table", item["name"])
 
@@ -156,10 +157,11 @@ class AutoSubmitter(SubmitterBase):
         job_stats = self._remote.job_status()
 
         for job in job_stats:
-            item = self.__job_table[self.__ids[job[JOB_NAME]]]
-            item["jobId"] = job[JOB_ID]
-            item["expCompletion"] = self.__time_to_completion(
-                job[JOB_ID], item["directory"])
+            if job[JOB_NAME] in self.__ids:
+                item = self.__job_table[self.__ids[job[JOB_NAME]]]
+                item["jobId"] = job[JOB_ID]
+                item["expCompletion"] = self.__time_to_completion(
+                    job[JOB_ID], item["directory"])
 
     def __initialize(self):
         """Initialize the internal job table.
