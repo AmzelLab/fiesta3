@@ -224,7 +224,9 @@ class AutoSubmitter(SubmitterBase):
     def __dump_job_stats(self):
         """Output the current job status as a json file."""
         json_file_name = "jobs_%s.json" % strftime('%X_%d_%b_%Y')
-        dump(self._data, json_file_name)
+
+        with open(json_file_name, 'w') as dump_file:
+            dump(self._data, dump_file)
         self.__logger.info("dump current job stats to json: %s",
                            json_file_name)
 
@@ -241,8 +243,10 @@ class AutoSubmitter(SubmitterBase):
         job_item = self.__job_table[self.__ids[job_name]]
         file_name = job_item["name"] + '.sh'
         GromacsBatchFile(job_item, file_name).file()
+
+        # the job id has index 3 after split
         new_job_id = self._remote.copy_to_remote_and_submit(
-            file_name, job_item["directory"])
+            file_name, job_item["directory"]).split()[3]
 
         if new_job_id == "":
             self.__logger.error("job submission failed [%s]", job_name)
