@@ -197,9 +197,6 @@ class AutoSubmitter(SubmitterBase):
 
         if not self.__checkin_items():
             return False
-
-        self.__get_job_stats()
-
         return True
 
     def _log_start(self):
@@ -213,9 +210,9 @@ class AutoSubmitter(SubmitterBase):
 
         This function defines an async callback as a task.
         """
-        sleep(AutoSubmitter.CHECK_EVERY_N)
         self.__logger.info("update job status from remote")
         self.__get_job_stats()
+        sleep(AutoSubmitter.CHECK_EVERY_N)
         self.__executor.submit(self.__update_job_stats_task)
 
     def __dump_job_stats(self):
@@ -258,4 +255,4 @@ class AutoSubmitter(SubmitterBase):
         if not self.__initialize():
             return
 
-        self.__executor.submit()
+        self.__executor.submit(self.__update_job_stats_task)
