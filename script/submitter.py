@@ -121,7 +121,7 @@ class AutoSubmitter(SubmitterBase):
         index = 0
         for item in self.__job_table:
             if len(item["name"]) > 8:
-                self.__logger.critical("job name has a length > 8")
+                self.__logger.critical("job name has a length > 8 (%s)", item["name"])
                 return False
             self.__logger.info("put job %s in job table", item["name"])
 
