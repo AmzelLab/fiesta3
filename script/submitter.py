@@ -108,6 +108,7 @@ class AutoSubmitter(SubmitterBase):
 
     # Check status every half a hour.
     CHECK_EVERY_N = 1800
+    GAP_TIME = 500
     NUM_THREADS = 8
 
     def __init__(self, jobs_data, remote):
@@ -179,12 +180,16 @@ class AutoSubmitter(SubmitterBase):
             if job[JOB_NAME] in self.__ids:
                 item = self.__job_table[self.__ids[job[JOB_NAME]]]
                 item["jobId"] = job[JOB_ID]
-                time_to_completion_secs = self.__time_to_completion(
+                item["expCompletion"] = self.__time_to_completion(
                     job[JOB_ID], item["directory"])
 
-                if time_to_completion_secs <= AutoSubmitter.CHECK_EVERY_N:
-                    self.__auto_resubmit_task(item["name"],
-                                              time_to_completion_secs)
+    def __order_job_submission(self):
+        """Scan the job table. Order a task if a job is ready to submit."""
+        for job in self.__job_table:
+            if job["expCompletion"] <= AutoSubmitter.CHECK_EVERY_N:
+                self.__executor.submit(self.__auto_resubmit_task,
+                                       job["name"], job["expCompletion"] +
+                                       AutoSubmitter.GAP_TIME)
 
     def __initialize(self):
         """Initialize the internal job table.
@@ -212,6 +217,7 @@ class AutoSubmitter(SubmitterBase):
         """
         self.__logger.info("update job status from remote")
         self.__get_job_stats()
+        self.__order_job_submission()
         sleep(AutoSubmitter.CHECK_EVERY_N)
         self.__executor.submit(self.__update_job_stats_task)
 
