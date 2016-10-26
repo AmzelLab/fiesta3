@@ -72,7 +72,7 @@ class BatchFile(object):
                  "#SBATCH\n"                      \
                  "#SBATCH --job-name=%s\n"        \
                  "#SBATCH --time=%s\n"            \
-                 "#SBATCH --N %d\n"               \
+                 "#SBATCH -N %d\n"               \
                  "#SBATCH --ntasks-per-node=%d\n" \
                  "#SBATCH --cpus-per-task=%d\n"   \
                  "#SBATCH --exclusive\n"          \
@@ -163,8 +163,8 @@ class GromacsBatchFile(BatchFile):
         """
         gpu_flag = ""
         for i in range(0, self._data["numOfGPUs"]):
-            gpu_flag += str(i) * int(self._data["numOfProcs"] / \
-                self._data["numOfGPUs"])
+            gpu_flag += str(i) * int(self._data["numOfProcs"] /
+                                     self._data["numOfGPUs"])
 
         return gpu_flag
 

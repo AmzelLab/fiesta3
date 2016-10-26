@@ -45,11 +45,11 @@ class Remote(object):
             command_string = " ".join(command)
             self.__logger.error("Remote command TIMEOUT: %s", command_string)
             return ""
-        except CalledProcessError as error:
-            self.__logger.error(error.output)
+        except CalledProcessError as err:
+            self.__logger.error("CalledProcessError: " + err.output)
             return ""
 
-        return result.decode("utf-8")
+        return result.decode("utf-8").rstrip("\n")
 
     def job_status(self):
         """Query job status through ssh.
@@ -61,7 +61,6 @@ class Remote(object):
         status = self.__run_command(
             ["ssh", "-o", "ControlMaster=no", self.__server, "sqme"])
         job_status = status.split("\n")[2:]
-        job_status.pop()
 
         return [job.lstrip().split() for job in job_status]
 
@@ -69,7 +68,7 @@ class Remote(object):
         """Returns the current time of remote"""
         self.__logger.info("Querying current time on remote.")
         return self.__run_command(["ssh", "-o", "ControlMaster=no",
-                                   self.__server, "date"]).rstrip("\n")
+                                   self.__server, "date"])
 
     def expect_completion_time(self, job_id, working_folder):
         """Returns the expect completion time of a job

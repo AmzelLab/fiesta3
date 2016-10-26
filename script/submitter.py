@@ -244,6 +244,7 @@ class AutoSubmitter(SubmitterBase):
         new_job_id = self._remote.copy_to_remote_and_submit(
             file_name, job_item["directory"])
 
+        if "new_job_id"
         self.__logger.info("job submitted: %s section_id: %d",
                            job_name, job_item["sectionNum"])
 
