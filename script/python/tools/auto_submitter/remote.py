@@ -45,7 +45,7 @@ class Remote(object):
                 command, timeout=Remote.TIMEOUT, stderr=STDOUT)
         except TimeoutExpired:
             command_string = " ".join(command)
-            self.__logger.error("Remote command TIMEOUT: %s", command_string)
+            self.__logger.info("Remote command TIMEOUT: %s", command_string)
             return ""
         except CalledProcessError as err:
             self.__logger.error("CalledProcessError: " +

@@ -250,6 +250,7 @@ class AutoSubmitter(SubmitterBase):
         # the job id has index 3 after split
         new_job_id = self._remote.copy_to_remote_and_submit(
             file_name, job_item["directory"]).split()[3]
+        self.__logger.info("remote returns new job id: %s", new_job_id)
 
         if new_job_id == "":
             self.__logger.error("job submission failed [%s]", job_name)
