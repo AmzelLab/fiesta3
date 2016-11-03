@@ -167,7 +167,7 @@ class AutoSubmitter(SubmitterBase):
         # but make this job pending forever.
         if remote_current == "" or expt_completion == "":
             self.__logger.error("failed to obtain completion time.")
-            return sys.maxint
+            return sys.maxsize
 
         remote_curr_date = datetime.strptime(
             remote_current, "%a %b %d %H:%M:%S EDT %Y")
