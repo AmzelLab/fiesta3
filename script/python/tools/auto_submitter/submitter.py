@@ -223,7 +223,6 @@ class AutoSubmitter(SubmitterBase):
         self.__get_job_stats()
         self.__order_job_submission()
         sleep(AutoSubmitter.CHECK_EVERY_N)
-        self.__executor.submit(self.__update_job_stats_task)
 
     def __dump_job_stats(self):
         """Output the current job status as a json file."""
@@ -265,7 +264,8 @@ class AutoSubmitter(SubmitterBase):
         self.__dump_job_stats()
 
     def run(self):
-        """Run the scheduler to manage all jobs.
+        """Run the scheduler to manage all jobs. The main thread
+        should always run this method.
         """
         super(AutoSubmitter, self).run()
 
@@ -274,5 +274,7 @@ class AutoSubmitter(SubmitterBase):
             self.__logger.error("failed to initialize all jobs.")
             return
 
-        self.__executor.submit(self.__update_job_stats_task)
+        while True:
+            self.__update_job_stats_task();
+
         self.__logger.info("terminating.")
