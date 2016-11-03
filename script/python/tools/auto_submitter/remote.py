@@ -46,7 +46,8 @@ class Remote(object):
             self.__logger.error("Remote command TIMEOUT: %s", command_string)
             return ""
         except CalledProcessError as err:
-            self.__logger.error("CalledProcessError: " + err.output)
+            self.__logger.error("CalledProcessError: " +
+                                err.output.decode("utf-8"))
             return ""
 
         return result.decode("utf-8").rstrip("\n")
