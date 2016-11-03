@@ -160,13 +160,21 @@ class AutoSubmitter(SubmitterBase):
         Returns:
             Float type, time to completion in seconds.
         """
+        if work_dir == "":
+            self.__logger.warning("No work_directory is provided.")
+            return sys.maxsize
+
+        # Initially jobs are not submitted so it is not assigned an id.
+        if job_id == "":
+            return 0
+
         remote_current = self._remote.current_remote_time()
         expt_completion = self._remote.expect_completion_time(job_id, work_dir)
 
         # If something wrong happens, we don't crash the script
         # but make this job pending forever.
         if remote_current == "" or expt_completion == "":
-            self.__logger.error("failed to obtain completion time.")
+            self.__logger.info("failed to obtain completion time.")
             return sys.maxsize
 
         remote_curr_date = datetime.strptime(
@@ -187,7 +195,7 @@ class AutoSubmitter(SubmitterBase):
                 item["expCompletion"] = self.__time_to_completion(
                     job[JOB_ID], item["directory"])
 
-    def __order_job_submission(self):
+    def __maybe_order_job_submission(self):
         """Scan the job table. Order a task if a job is ready to submit."""
         for job in self.__job_table:
             if job["expCompletion"] <= AutoSubmitter.CHECK_EVERY_N:
@@ -221,7 +229,7 @@ class AutoSubmitter(SubmitterBase):
         """
         self.__logger.info("update job status from remote")
         self.__get_job_stats()
-        self.__order_job_submission()
+        self.__maybe_order_job_submission()
         sleep(AutoSubmitter.CHECK_EVERY_N)
 
     def __dump_job_stats(self):

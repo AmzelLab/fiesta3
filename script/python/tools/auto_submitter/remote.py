@@ -90,8 +90,8 @@ class Remote(object):
         result = self.__run_command(command_str.split())
         re_list = result.split()
         if len(re_list) == 0 or re_list[0] != "imb":
-            self.__logger.error("remote job may not be ready when querying"
-                                " expect_completion_time")
+            self.__logger.info("remote job may not be ready when querying"
+                               " expect_completion_time")
             return ""
         else:
             return " ".join(re_list[7:])
