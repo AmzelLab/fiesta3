@@ -4,8 +4,9 @@ Remote class is a class that handles the status of the remote server.
 """
 
 from subprocess import check_output
-from subprocess import TimeoutExpired
 from subprocess import CalledProcessError
+from subprocess import STDOUT
+from subprocess import TimeoutExpired
 
 import logging
 
@@ -40,7 +41,8 @@ class Remote(object):
         """
         result = None
         try:
-            result = check_output(command, timeout=Remote.TIMEOUT)
+            result = check_output(
+                command, timeout=Remote.TIMEOUT, stderr=STDOUT)
         except TimeoutExpired:
             command_string = " ".join(command)
             self.__logger.error("Remote command TIMEOUT: %s", command_string)
