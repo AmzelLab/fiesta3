@@ -22,7 +22,7 @@ from remote import Remote
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 
 # Define some constants
-JOB_ID = 1
+JOB_ID = 0
 JOB_NAME = 2
 JOB_STAT = 4
 
@@ -192,8 +192,11 @@ class AutoSubmitter(SubmitterBase):
             if job[JOB_NAME] in self.__ids:
                 item = self.__job_table[self.__ids[job[JOB_NAME]]]
                 item["jobId"] = job[JOB_ID]
-                item["expCompletion"] = self.__time_to_completion(
-                    job[JOB_ID], item["directory"])
+                if job[JOB_STAT] == "R":
+                    item["expCompletion"] = self.__time_to_completion(
+                        job[JOB_ID], item["directory"])
+                else:
+                    item["expCompletion"] = sys.maxsize
 
     def __maybe_order_job_submission(self):
         """Scan the job table. Order a task if a job is ready to submit."""
