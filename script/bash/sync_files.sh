@@ -8,6 +8,7 @@ declare -a LOCAL_LOCATIONS_ARRAY=()
 
 # Set Global Parameters HERE
 # Examples:
+#  Note for all PREFIX variables, strip the slashes '/'.
 #   REMOTE_PREFIX=marcc:/home-4/yliu120@jhu.edu/scratch
 #   LOCAL_PREFIX=/nfs/fs/amzel3/yliu120
 #   SLEEP_TIME=172800
@@ -33,6 +34,7 @@ run_sync() {
 
 # HERE -- Add new entry -- HERE
 # Examples:
+#  Note: no slashes at the end of all string parameters.
 #   register_entry "pi3k_new" ""
 register_entry "" ""
 
