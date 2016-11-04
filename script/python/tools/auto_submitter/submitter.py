@@ -12,7 +12,6 @@ import sys
 
 from threading import Lock
 from time import sleep
-from time import strftime
 
 from concurrent.futures import ThreadPoolExecutor
 

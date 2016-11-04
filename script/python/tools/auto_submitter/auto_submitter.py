@@ -15,6 +15,7 @@ import argparse
 import logging
 from time import strftime
 
+import batch
 from submitter import AutoSubmitter
 from submitter import TestSubmitter
 
@@ -44,6 +45,9 @@ def main():
     LOGGER.info("auto_submitter starts")
 
     parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser.add_argument('--exclusive_nodes', type=str, nargs='?',
+                        action='store',
+                        help="Exclusive nodes, one per line")
     parser.add_argument('--json', type=argparse.FileType('r'), nargs='?',
                         default='jobs.json',
                         help="A json file encoding all jobs' info")
@@ -58,6 +62,8 @@ def main():
         jobs_data = load(args.json)
     finally:
         args.json.close()
+
+    batch.EXCLUSION_FILE = args.exclusive_nodes if args.exclusive_nodes else ""
 
     submitter = TestSubmitter(jobs_data, args.remote) if args.test else \
         AutoSubmitter(jobs_data, args.remote)

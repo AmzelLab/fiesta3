@@ -10,6 +10,15 @@ from abc import abstractmethod
 
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 
+EXCLUSION_FILE = ''
+
+
+def load_exclusion_list():
+    """Always load eagerly from a file"""
+    with open(EXCLUSION_FILE, 'r') as excluded_file:
+        for line in excluded_file:
+            yield line.rstrip()
+
 
 class BatchFile(object):
     """An interface for generating batch files from job data.
@@ -95,6 +104,10 @@ class BatchFile(object):
                 raise ValueError("Tasks can't be evenly distributed to GPUs")
 
             header += "#SBATCH --gres=gpu:%d\n" % self._data["numOfGPUs"]
+
+        if EXCLUSION_FILE != "":
+            header += "#SBATCH --exclude=%s\n" % ",".join(
+                load_exclusion_list())
 
         return header + "#\n\n"
 
@@ -196,7 +209,9 @@ class GromacsBatchFile(BatchFile):
         Returns:
             a string env
         """
-        return "source %s/GMXRC\n"           \
+        return "module load intel-mpi\n"     \
+               "module load cuda/7.5\n\n"    \
+               "source %s/GMXRC\n"           \
                "export OMP_NUM_THREADS=%d\n" \
                "cd %s\n" % (self._data["binaryPath"],
                             self._data["numOfThrs"],
