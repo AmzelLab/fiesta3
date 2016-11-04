@@ -7,10 +7,16 @@ declare -a REMOTE_LOCATIONS_ARRAY=()
 declare -a LOCAL_LOCATIONS_ARRAY=()
 
 # Set Global Parameters HERE
-REMOTE_PREFIX=marcc:/home-4/yliu120@jhu.edu/scratch
-LOCAL_PREFIX=/nfs/fs/amzel3/yliu120
-SYNC_JOB_NUM=1
+# Examples:
+#   REMOTE_PREFIX=marcc:/home-4/yliu120@jhu.edu/scratch
+#   LOCAL_PREFIX=/nfs/fs/amzel3/yliu120
+#   SLEEP_TIME=172800
+
+REMOTE_PREFIX=
+LOCAL_PREFIX=
 SLEEP_TIME=172800
+
+SYNC_JOB_NUM=1
 
 register_entry() {
   REMOTE_LOCATIONS_ARRAY[${SYNC_JOB_NUM}]=$1
@@ -26,8 +32,9 @@ run_sync() {
 }
 
 # HERE -- Add new entry -- HERE
-register_entry "pi3k_new" ""
-register_entry "nis_sandwich/production" "nis_sandwich"
+# Examples:
+#   register_entry "pi3k_new" ""
+register_entry "" ""
 
 for ((;;)) do
   run_sync
