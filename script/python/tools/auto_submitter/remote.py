@@ -76,7 +76,7 @@ class Remote(object):
         """Returns the current time of remote"""
         self.__logger.info("Querying current time on remote.")
         result = self.__run_command(["ssh", "-o", "ControlMaster=no",
-                                   self.__server, "date"])
+                                     self.__server, "date"])
         if result[0]:
             return result[1]
         else:
@@ -130,3 +130,12 @@ class Remote(object):
             return ""
 
         return self.__run_command(remote_submit.split())[1]
+
+    def cancel_job(self, job_id):
+        """Cancel a job on remote.
+
+        Args:
+            job_id: the job id to cancel.
+        """
+        if not self.__run_command(["scancel", job_id])[0]:
+            self.__logger.error("Cancelling job [%s] failed.", job_id)

@@ -25,6 +25,7 @@ __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 JOB_ID = 0
 JOB_NAME = 2
 JOB_STAT = 4
+JOB_MACHINE = 7
 
 
 class SubmitterBase(object):
@@ -194,6 +195,18 @@ class AutoSubmitter(SubmitterBase):
                 if job[JOB_STAT] == "R":
                     item["expCompletion"] = self.__time_to_completion(
                         job[JOB_ID], item["directory"])
+
+                    # If expectation time > job time limit, cancel it
+                    time_hms = item["timeLimit"].split(":")
+                    time_limit = time_hms[0] * 3600 + time_hms[1] * 60 + \
+                        time_hms[2]
+
+                    if item["expCompletion"] > time_limit:
+                        self.__logger.error(
+                            "cancel job [%s] due to slow node [%s].",
+                            job[JOB_NAME], job[JOB_MACHINE])
+                        self._remote.cancel_job(item["jobId"])
+
                 else:
                     item["expCompletion"] = sys.maxsize
 
