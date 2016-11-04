@@ -36,7 +36,7 @@ run_sync() {
 # Examples:
 #  Note: no slashes at the end of all string parameters.
 #   register_entry "pi3k_new" ""
-register_entry "" ""
+#   register_entry "xxx" "yyy"
 
 for ((;;)) do
   run_sync
