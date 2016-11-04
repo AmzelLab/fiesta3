@@ -1,6 +1,9 @@
 #!/bin/bash
 #
+# Author: Yunlong Liu (davislong198833@gmail.com)
 # Perform automatic sync service over local and remote
+# Read all the notes before you modify this tiny bash script.
+# The script should work only after a correct adaptive modification.
 # UNCOMMENT THIS WHILE DEBUGGING: set -x
 
 declare -a REMOTE_LOCATIONS_ARRAY=()
