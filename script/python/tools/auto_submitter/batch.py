@@ -177,15 +177,18 @@ class GromacsBatchFile(BatchFile):
 
     REQUIRED = ["mdp", "continuation"]
 
-    def __init__(self, data, file_name="batch"):
+    def __init__(self, data, file_name="batch", makeup=False):
         """Init with a structured data of the batch job for Gromacs.
 
         Args:
             data: dict type, all params for the batch jobs.
             file_name: string, the file name of the batch file we will
             generate.
+            makeup: Boolean, generate a makeup batchfile.
         """
         super(GromacsBatchFile, self).__init__(data, file_name)
+
+        self.__makeup = makeup
         self.__check_data()
 
     def __check_data(self):
@@ -252,12 +255,8 @@ class GromacsBatchFile(BatchFile):
                             self._data["numOfThrs"],
                             self._data["directory"])
 
-    def _binary(self):
-        """Generate binary command line for Gromacs job.
-
-        Returns:
-            binary commands content of string type.
-        """
+    def __grompp(self):
+        """Generate grompp command"""
         grompp = "gmx_mpi grompp -f %s -o %s.tpr -c %s.gro -p topol.top" \
             % (self._data["mdp"], self.__next_sec_name(),
                self.__curr_sec_name())
@@ -270,14 +269,34 @@ class GromacsBatchFile(BatchFile):
         else:
             grompp += "\n"
 
-        mdrun = "%s/mpirun -np %d gmx_mpi mdrun -ntomp %d -pin on -v" \
-                " -deffnm %s" % (self._data["binaryPath"],
-                                 self._data["numOfProcs"],
-                                 self._data["numOfThrs"],
-                                 self.__next_sec_name())
+        return grompp
+
+    def __mdrun(self):
+        """Generate makeup command"""
+        mdrun = "%s/mpirun -np %d gmx_mpi mdrun -ntomp %d -pin on -v" % (
+            self._data["binaryPath"],
+            self._data["numOfProcs"],
+            self._data["numOfThrs"])
+
+        if self.__makeup:
+            mdrun += " -deffnm %s -cpi %s.cpt -append" % (
+                self.__curr_sec_name(), self.__curr_sec_name())
+        else:
+            mdrun += " -deffnm %s" % self.__next_sec_name()
+
         if self._data["partition"] == "gpu":
             mdrun += " -dlb no -gpu_id %s\n" % self.__gpu_flag()
         else:
             mdrun += "\n"
 
-        return grompp + mdrun
+        return mdrun
+
+    def _binary(self):
+        """Generate binary command line for Gromacs job.
+
+        Returns:
+            binary commands content of string type.
+        """
+        if self.__makeup:
+            return self.__mdrun()
+        return self.__grompp() + self.__mdrun()

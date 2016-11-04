@@ -93,14 +93,17 @@ class TestSubmitter(SubmitterBase):
         else:
             self.__logger.error("Accessing remote failed.")
 
-        # Generating Batch file
+        # Generating Batch file (continuation and makeup both)
         self.__logger.info("Reading data title: %s",
                            self._data["data"]["title"])
         items = self._data["data"]["items"]
         for job_item in items:
             if job_item["kind"] == "Gromacs":
                 GromacsBatchFile(job_item, job_item["name"]).file()
+                GromacsBatchFile(job_item,
+                                 job_item["name"] + "_makeup", True).file()
 
+        # Generate Makeup Batch file
         self.__logger.info("Test completed.")
 
 
@@ -146,6 +149,10 @@ class AutoSubmitter(SubmitterBase):
             self.__ids[item["name"]] = index
             item["jobId"] = ""
             item["expCompletion"] = 0
+
+            if "makeup" not in item:
+                item["makeup"] = False
+
             index += 1
 
         return True
@@ -208,6 +215,11 @@ class AutoSubmitter(SubmitterBase):
                         self._remote.cancel_job(item["jobId"])
                         add_exclusion_node(item, job[JOB_MACHINE])
 
+                        item["expCompletion"] = 0
+                        item["makeup"] = True
+                    else:
+                        item["makeup"] = False
+
                 else:
                     item["expCompletion"] = sys.maxsize
 
@@ -269,7 +281,7 @@ class AutoSubmitter(SubmitterBase):
         logger.info("submitting job %s.", job_name)
 
         file_name = job_name + '.sh'
-        GromacsBatchFile(job, file_name).file()
+        GromacsBatchFile(job, file_name, job["makeup"]).file()
 
         # the job id has index 3 after split
         new_job_id = self._remote.copy_to_remote_and_submit(
