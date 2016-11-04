@@ -208,21 +208,25 @@ class GromacsBatchFile(BatchFile):
         Returns:
             binary commands content of string type.
         """
-        grompp = "gmx_mpi grompp -f %s -o %s.tpr -c %s.gro -p topol.top " \
-                 "-n index.ndx" % (self._data["mdp"], self.__next_sec_name(),
-                                   self.__curr_sec_name())
-        if self._data["continuation"]:
+        grompp = "gmx_mpi grompp -f %s -o %s.tpr -c %s.gro -p topol.top" \
+            % (self._data["mdp"], self.__next_sec_name(),
+               self.__curr_sec_name())
+
+        if "index" in self._data:
+            grompp += " -n %s.ndx" % self._data["index"]
+
+        if "continuation" in self._data:
             grompp += " -t %s.cpt\n" % self.__curr_sec_name()
         else:
             grompp += "\n"
 
-        mdrun = "%s/mpirun -np %d gmx_mpi mdrun -ntomp %d -pin on -v -dlb no" \
+        mdrun = "%s/mpirun -np %d gmx_mpi mdrun -ntomp %d -pin on -v" \
                 " -deffnm %s" % (self._data["binaryPath"],
                                  self._data["numOfProcs"],
                                  self._data["numOfThrs"],
                                  self.__next_sec_name())
         if self._data["partition"] == "gpu":
-            mdrun += " -gpu_id %s\n" % self.__gpu_flag()
+            mdrun += " -dlb no -gpu_id %s\n" % self.__gpu_flag()
         else:
             mdrun += "\n"
 

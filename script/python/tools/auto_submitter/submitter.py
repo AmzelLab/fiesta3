@@ -98,8 +98,7 @@ class TestSubmitter(SubmitterBase):
         items = self._data["data"]["items"]
         for job_item in items:
             if job_item["kind"] == "Gromacs":
-                batch_file = GromacsBatchFile(job_item, job_item["name"])
-                batch_file.file()
+                GromacsBatchFile(job_item, job_item["name"]).file()
 
         self.__logger.info("Test completed.")
 
@@ -187,22 +186,28 @@ class AutoSubmitter(SubmitterBase):
     def __get_job_stats(self):
         """put remote job status onto the internal data structure"""
         job_stats = self._remote.job_status(self._data["userId"])
+        print(job_stats)
 
         for job in job_stats:
             if job[JOB_NAME] in self.__ids:
+                print(job[JOB_NAME])
                 item = self.__job_table[self.__ids[job[JOB_NAME]]]
                 item["jobId"] = job[JOB_ID]
+                print(item["name"] + " " + str(item["expCompletion"]))
                 if job[JOB_STAT] == "R":
                     item["expCompletion"] = self.__time_to_completion(
                         job[JOB_ID], item["directory"])
                 else:
                     item["expCompletion"] = sys.maxsize
+                print(item["name"] + " " + str(item["expCompletion"]))
 
     def __maybe_order_job_submission(self):
         """Scan the job table. Order a task if a job is ready to submit."""
         for job in self.__job_table:
+            print(job["name"] + " " + str(job["expCompletion"]))
             if job["expCompletion"] <= AutoSubmitter.CHECK_EVERY_N:
-                self.__executor.submit(self.__auto_resubmit_task, job)
+                self.__executor.submit(self.__auto_resubmit_task, job,
+                                       self.__logger)
 
     def __initialize(self):
         """Initialize the internal job table.
@@ -242,7 +247,7 @@ class AutoSubmitter(SubmitterBase):
         self.__logger.info("dump current job stats to json")
         self.__lock.release()
 
-    def __auto_resubmit_task(self, job):
+    def __auto_resubmit_task(self, job, logger):
         """Resubmit a new job after some delays
 
         Args:
@@ -252,7 +257,7 @@ class AutoSubmitter(SubmitterBase):
         sleep(job["expCompletion"] + AutoSubmitter.GAP_TIME)
 
         job_name = job["name"]
-        self.__logger.info("submitting job %s.", job_name)
+        logger.info("submitting job %s.", job_name)
 
         file_name = job_name + '.sh'
         GromacsBatchFile(job, file_name).file()
@@ -260,14 +265,13 @@ class AutoSubmitter(SubmitterBase):
         # the job id has index 3 after split
         new_job_id = self._remote.copy_to_remote_and_submit(
             file_name, job["directory"]).split()[3]
-        self.__logger.info("remote returns new job id: %s", new_job_id)
+        logger.info("remote returns new job id: %s", new_job_id)
 
         if new_job_id == "":
-            self.__logger.error("job submission failed [%s]", job_name)
+            logger.error("job submission failed [%s]", job_name)
         else:
-            self.__logger.info("job submitted: %s section_id: %d job_id: %s",
-                               job_name, job["sectionNum"],
-                               new_job_id)
+            logger.info("job submitted: %s section_id: %d job_id: %s",
+                        job_name, job["sectionNum"], new_job_id)
 
         job["jobId"] = new_job_id
         job["sectionNum"] += 1
@@ -286,6 +290,6 @@ class AutoSubmitter(SubmitterBase):
             return
 
         while True:
-            self.__update_job_stats_task();
+            self.__update_job_stats_task()
 
         self.__logger.info("terminating.")

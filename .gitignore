@@ -3,3 +3,5 @@ __pycache__
 .*.swp
 
 *.log
+*.1
+*_current.json

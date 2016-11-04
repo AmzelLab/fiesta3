@@ -16,7 +16,7 @@ __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 class Remote(object):
     """Handling remote status of jobs.
     """
-    TIMEOUT = 20
+    TIMEOUT = 60
 
     def __init__(self, server):
         """Creating a remote handler.
@@ -46,13 +46,13 @@ class Remote(object):
         except TimeoutExpired:
             command_string = " ".join(command)
             self.__logger.info("Remote command TIMEOUT: %s", command_string)
-            return ""
+            return (False, "")
         except CalledProcessError as err:
             self.__logger.error("CalledProcessError: " +
                                 err.output.decode("utf-8"))
-            return ""
+            return (False, "")
 
-        return result.decode("utf-8").rstrip("\n")
+        return (True, result.decode("utf-8").rstrip("\n"))
 
     def job_status(self, user):
         """Query job status through ssh.
@@ -64,15 +64,24 @@ class Remote(object):
         status = self.__run_command(
             ["ssh", "-o", "ControlMaster=no", self.__server,
              "squeue", "-u", user])
-        job_status = status.split("\n")[2:]
 
-        return [job.lstrip().split() for job in job_status]
+        if status[0]:
+            job_status = status[1].split("\n")[1:]
+            return [job.lstrip().split() for job in job_status]
+        else:
+            self.__logger.error("Failed to query job status.")
+            return []
 
     def current_remote_time(self):
         """Returns the current time of remote"""
         self.__logger.info("Querying current time on remote.")
-        return self.__run_command(["ssh", "-o", "ControlMaster=no",
+        result = self.__run_command(["ssh", "-o", "ControlMaster=no",
                                    self.__server, "date"])
+        if result[0]:
+            return result[1]
+        else:
+            self.__logger.error("Failed to query current remote time")
+            return ""
 
     def expect_completion_time(self, job_id, working_folder):
         """Returns the expect completion time of a job
@@ -88,7 +97,12 @@ class Remote(object):
         command_str = "ssh -o ControlMaster=no %s tail -1 %s/%s" % \
             (self.__server, working_folder, "slurm-%s.out" % job_id)
         result = self.__run_command(command_str.split())
-        re_list = result.split()
+
+        if not result[0]:
+            self.__logger.error("Failed to query ECT")
+            return ""
+
+        re_list = result[1].split()
         if len(re_list) == 0 or re_list[0] != "imb":
             self.__logger.info("remote job may not be ready when querying"
                                " expect_completion_time")
@@ -110,5 +124,9 @@ class Remote(object):
             file_name, self.__server, remote_folder)
         remote_submit = "ssh -o ControlMaster=no %s cd %s && sbatch %s" \
             % (self.__server, remote_folder, file_name)
-        self.__run_command(remote_cp.split())
-        return self.__run_command(remote_submit.split())
+
+        if not self.__run_command(remote_cp.split())[0]:
+            self.__logger.error("copy to remote failed [%s]", file_name)
+            return ""
+
+        return self.__run_command(remote_submit.split())[1]
