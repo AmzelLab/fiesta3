@@ -10,14 +10,35 @@ from abc import abstractmethod
 
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 
-EXCLUSION_FILE = ''
+
+def _dump_exclusion_list(job_data):
+    """Dump the BatchFile's list to the designated file.
+
+    Args:
+        job_data: dict, the json job data.
+    """
+    with open(job_data["exclusion"], 'w') as excluded_file:
+        for node in job_data["exclusionList"]:
+            excluded_file.write(node + '\n')
 
 
-def load_exclusion_list():
-    """Always load eagerly from a file"""
-    with open(EXCLUSION_FILE, 'r') as excluded_file:
-        for line in excluded_file:
-            yield line.rstrip()
+def add_exclusion_node(job_data, node_id):
+    """Add a newly discovered node to the job's exclusion list
+
+    Args:
+        job_data: dict, the json job data.
+        node_id: string, the node's id.
+    """
+    if "exclusion" not in job_data:
+        # give a default naming to the exclusion file of this job.
+        job_data["exclusion"] = job_data["name"] + "_exclusion"
+        job_data["exclusionList"] = []
+
+    job_data["exclusionList"].append(node_id)
+    job_data["exclusionList"] = list(set(job_data["exclusionList"]))
+    job_data["exclusionList"].sort()
+
+    _dump_exclusion_list(job_data)
 
 
 class BatchFile(object):
@@ -40,6 +61,9 @@ class BatchFile(object):
         self.__check_data()
 
         self._file_name = file_name
+
+        if "exclusion" in self._data and "exclusionList" not in self._data:
+            self._data["exclusionList"] = []
 
     @property
     def file_name(self):
@@ -68,6 +92,12 @@ class BatchFile(object):
             if name not in self._data:
                 raise ValueError("% s is a required field but not shown"
                                  " your json configuration file." % name)
+
+    def __load_exclusion_list(self):
+        """Always load eagerly from a file"""
+        with open(self._data["exclusion"], 'r') as excluded_file:
+            for line in excluded_file:
+                self._data["exclusionList"].append(line.rstrip())
 
     @abstractmethod
     def _header(self):
@@ -105,9 +135,11 @@ class BatchFile(object):
 
             header += "#SBATCH --gres=gpu:%d\n" % self._data["numOfGPUs"]
 
-        if EXCLUSION_FILE != "":
+        if "exclusionList" in self._data:
+            if not self._data["exclusionList"]:
+                self.__load_exclusion_list()
             header += "#SBATCH --exclude=%s\n" % ",".join(
-                load_exclusion_list())
+                self._data["exclusionList"])
 
         return header + "#\n\n"
 
@@ -209,7 +241,10 @@ class GromacsBatchFile(BatchFile):
         Returns:
             a string env
         """
-        return "module load intel-mpi\n"     \
+        # Eventually should be user defined. But for simpilicity,
+        # hard code it here.
+        return "module load gcc\n"           \
+               "module load intel-mpi\n"     \
                "module load cuda/7.5\n\n"    \
                "source %s/GMXRC\n"           \
                "export OMP_NUM_THREADS=%d\n" \

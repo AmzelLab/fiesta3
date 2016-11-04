@@ -17,7 +17,8 @@
         "nameBase": "md",
         "sectionNum": 1,
         "mdp": "../mdp/md.mdp",
-        "continuation": true
+        "continuation": true,
+        "exclusion": "exclusive_node"
       }
     ]
   }

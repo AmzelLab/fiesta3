@@ -15,6 +15,7 @@ from time import sleep
 
 from concurrent.futures import ThreadPoolExecutor
 
+from batch import add_exclusion_node
 from batch import GromacsBatchFile
 from remote import Remote
 
@@ -107,8 +108,8 @@ class AutoSubmitter(SubmitterBase):
     """Auto Submitter implementation"""
 
     # Check status every half a hour.
-    CHECK_EVERY_N = 60
-    GAP_TIME = 0
+    CHECK_EVERY_N = 1800
+    GAP_TIME = 30
     NUM_THREADS = 8
 
     def __init__(self, jobs_data, remote):
@@ -205,6 +206,7 @@ class AutoSubmitter(SubmitterBase):
                             "cancel job [%s] due to slow node [%s].",
                             job[JOB_NAME], job[JOB_MACHINE])
                         self._remote.cancel_job(item["jobId"])
+                        add_exclusion_node(item, job[JOB_MACHINE])
 
                 else:
                     item["expCompletion"] = sys.maxsize
