@@ -273,8 +273,7 @@ class GromacsBatchFile(BatchFile):
 
     def __mdrun(self):
         """Generate makeup command"""
-        mdrun = "%s/mpirun -np %d gmx_mpi mdrun -ntomp %d -pin on -v" % (
-            self._data["binaryPath"],
+        mdrun = "mpirun -np %d gmx_mpi mdrun -ntomp %d -pin on -v" % (
             self._data["numOfProcs"],
             self._data["numOfThrs"])
 
