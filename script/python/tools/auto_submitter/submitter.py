@@ -264,7 +264,7 @@ class AutoSubmitter(SubmitterBase):
 
         self.__lock.acquire()
         with open("jobs_current.json", 'w') as dump_file:
-            dump(self._data, dump_file)
+            dump(self._data, dump_file, indent=4, sort_keys=True)
         self.__logger.info("dump current job stats to json")
         self.__lock.release()
 
