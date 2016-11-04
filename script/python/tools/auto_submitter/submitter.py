@@ -186,25 +186,20 @@ class AutoSubmitter(SubmitterBase):
     def __get_job_stats(self):
         """put remote job status onto the internal data structure"""
         job_stats = self._remote.job_status(self._data["userId"])
-        print(job_stats)
 
         for job in job_stats:
             if job[JOB_NAME] in self.__ids:
-                print(job[JOB_NAME])
                 item = self.__job_table[self.__ids[job[JOB_NAME]]]
                 item["jobId"] = job[JOB_ID]
-                print(item["name"] + " " + str(item["expCompletion"]))
                 if job[JOB_STAT] == "R":
                     item["expCompletion"] = self.__time_to_completion(
                         job[JOB_ID], item["directory"])
                 else:
                     item["expCompletion"] = sys.maxsize
-                print(item["name"] + " " + str(item["expCompletion"]))
 
     def __maybe_order_job_submission(self):
         """Scan the job table. Order a task if a job is ready to submit."""
         for job in self.__job_table:
-            print(job["name"] + " " + str(job["expCompletion"]))
             if job["expCompletion"] <= AutoSubmitter.CHECK_EVERY_N:
                 self.__executor.submit(self.__auto_resubmit_task, job,
                                        self.__logger)
