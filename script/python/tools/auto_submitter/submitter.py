@@ -202,9 +202,7 @@ class AutoSubmitter(SubmitterBase):
         """Scan the job table. Order a task if a job is ready to submit."""
         for job in self.__job_table:
             if job["expCompletion"] <= AutoSubmitter.CHECK_EVERY_N:
-                self.__executor.submit(self.__auto_resubmit_task,
-                                       job["name"], job["expCompletion"] +
-                                       AutoSubmitter.GAP_TIME)
+                self.__executor.submit(self.__auto_resubmit_task, job)
 
     def __initialize(self):
         """Initialize the internal job table.
@@ -244,34 +242,35 @@ class AutoSubmitter(SubmitterBase):
         self.__logger.info("dump current job stats to json")
         self.__lock.release()
 
-    def __auto_resubmit_task(self, job_name, sleep_time):
+    def __auto_resubmit_task(self, job):
         """Resubmit a new job after some delays
 
         Args:
             job_name: the job we want to submit
-            sleep_time: delays in second
         """
         # make a local batch file
-        sleep(sleep_time)
+        sleep(job["expCompletion"] + AutoSubmitter.GAP_TIME)
+
+        job_name = job["name"]
         self.__logger.info("submitting job %s.", job_name)
-        job_item = self.__job_table[self.__ids[job_name]]
-        file_name = job_item["name"] + '.sh'
-        GromacsBatchFile(job_item, file_name).file()
+
+        file_name = job_name + '.sh'
+        GromacsBatchFile(job, file_name).file()
 
         # the job id has index 3 after split
         new_job_id = self._remote.copy_to_remote_and_submit(
-            file_name, job_item["directory"]).split()[3]
+            file_name, job["directory"]).split()[3]
         self.__logger.info("remote returns new job id: %s", new_job_id)
 
         if new_job_id == "":
             self.__logger.error("job submission failed [%s]", job_name)
         else:
             self.__logger.info("job submitted: %s section_id: %d job_id: %s",
-                               job_name, job_item["sectionNum"],
+                               job_name, job["sectionNum"],
                                new_job_id)
 
-        job_item["jobId"] = new_job_id
-        job_item["sectionNum"] += 1
+        job["jobId"] = new_job_id
+        job["sectionNum"] += 1
 
         self.__dump_job_stats()
 
