@@ -108,7 +108,7 @@ class Remote(object):
                                " expect_completion_time")
             return ""
         else:
-            return " ".join(re_list[7:])
+            return " ".join(re_list[-5:])
 
     def copy_to_remote_and_submit(self, file_name, remote_folder):
         """Copy a batch script to remote and submit it.
