@@ -8,7 +8,11 @@ SLURM batch script.
 from abc import ABCMeta
 from abc import abstractmethod
 
+import logging
+
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
+
+MODULE_LOGGER = logging.getLogger('auto_submitter.batch')
 
 
 def _dump_exclusion_list(job_data):
@@ -20,6 +24,8 @@ def _dump_exclusion_list(job_data):
     with open(job_data["exclusion"], 'w') as excluded_file:
         for node in job_data["exclusionList"]:
             excluded_file.write(node + '\n')
+
+    MODULE_LOGGER.info("dump new exclusive list to job [%s]", job_data["name"])
 
 
 def add_exclusion_node(job_data, node_id):
@@ -37,6 +43,9 @@ def add_exclusion_node(job_data, node_id):
     job_data["exclusionList"].append(node_id)
     job_data["exclusionList"] = list(set(job_data["exclusionList"]))
     job_data["exclusionList"].sort()
+
+    MODULE_LOGGER.info(
+        "add bad node [%s] to job [%s]", node_id, job_data["name"])
 
     _dump_exclusion_list(job_data)
 
@@ -261,7 +270,7 @@ class GromacsBatchFile(BatchFile):
         # TODO(yliu120): dependency injection for the configuration later.
         grompp = "mpirun -np 1 gmx_mpi grompp -f %s -o %s.tpr -c %s.gro" \
                  " -p topol.top" % (self._data["mdp"], self.__next_sec_name(),
-                                   self.__curr_sec_name())
+                                    self.__curr_sec_name())
 
         if "index" in self._data:
             grompp += " -n %s" % self._data["index"]
