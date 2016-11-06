@@ -101,7 +101,7 @@
         "numOfGPUs": 4,
         "nameBase": "Na1Na2I/md",
         "sectionNum": 2,
-        "mdp": "production.mdp",
+        "mdp": "mdp/production.mdp",
         "continuation": true,
         "index": "index.ndx",
         "exclusion": "exclusive_node"
