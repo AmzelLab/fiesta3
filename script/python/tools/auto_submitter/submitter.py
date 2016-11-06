@@ -128,7 +128,7 @@ class AutoSubmitter(SubmitterBase):
     """Auto Submitter implementation"""
 
     # Check status every half a hour.
-    CHECK_EVERY_N = 1800
+    CHECK_EVERY_N = 600
     GAP_TIME = 30
     NUM_THREADS = 8
 
@@ -202,7 +202,7 @@ class AutoSubmitter(SubmitterBase):
             return sys.maxsize
 
         remote_curr_date = datetime.strptime(
-            remote_current, "%a %b %d %H:%M:%S EDT %Y")
+            remote_current, "%a %b %d %H:%M:%S EST %Y")
         expt_comp_date = datetime.strptime(
             expt_completion, "%a %b %d %H:%M:%S %Y")
 
