@@ -137,5 +137,7 @@ class Remote(object):
         Args:
             job_id: the job id to cancel.
         """
-        if not self.__run_command(["scancel", job_id])[0]:
+        remote_cancel = "ssh -o ControlMaster=no %s scancel %s" % (
+                self.__server, job_id)
+        if not self.__run_command(remote_cancel.split())[0]:
             self.__logger.error("Cancelling job [%s] failed.", job_id)
