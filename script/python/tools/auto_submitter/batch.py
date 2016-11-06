@@ -260,7 +260,7 @@ class GromacsBatchFile(BatchFile):
 
         # TODO(yliu120): dependency injection for the configuration later.
         grompp = "mpirun -np 1 gmx_mpi grompp -f %s -o %s.tpr -c %s.gro" \
-                 "-p topol.top" % (self._data["mdp"], self.__next_sec_name(),
+                 " -p topol.top" % (self._data["mdp"], self.__next_sec_name(),
                                    self.__curr_sec_name())
 
         if "index" in self._data:
