@@ -230,11 +230,13 @@ class AutoSubmitter(SubmitterBase):
                         self._remote.cancel_job(item["jobId"])
 
                         self.__logger.info("update exclusion lists with %s",
-                                job[JOB_MACHINE])
+                                           job[JOB_MACHINE])
                         add_exclusion_node(item, job[JOB_MACHINE])
 
                         item["expCompletion"] = 0
                         item["makeup"] = True
+                        self.__dump_job_stats()
+
                     else:
                         item["makeup"] = False
 
