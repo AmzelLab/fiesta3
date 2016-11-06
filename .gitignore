@@ -5,3 +5,8 @@ __pycache__
 *.log
 *.1
 *_current.json
+
+exclusive_node
+exclusion_node
+exclusive_nodes
+exclusion_nodes
