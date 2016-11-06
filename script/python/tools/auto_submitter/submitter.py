@@ -16,7 +16,7 @@ from time import sleep
 from concurrent.futures import ThreadPoolExecutor
 
 from batch import add_exclusion_node
-from batch import GromacsBatchFile
+from batch import batch_file_factory
 from remote import Remote
 
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
@@ -115,9 +115,10 @@ class TestSubmitter(SubmitterBase):
         items = self._data["data"]["items"]
         for job_item in items:
             if job_item["kind"] == "Gromacs":
-                GromacsBatchFile(job_item, job_item["name"]).file()
-                GromacsBatchFile(job_item,
-                                 job_item["name"] + "_makeup", True).file()
+                job_item["makeup"] = False
+                batch_file_factory(job_item, job_item["name"] + "_test")
+                job_item["makeup"] = True
+                batch_file_factory(job_item, job_item["name"] + "_test_mkup")
 
         # Generate Makeup Batch file
         self.__logger.info("Test completed.")
@@ -227,6 +228,9 @@ class AutoSubmitter(SubmitterBase):
                             "cancel job [%s] due to slow node [%s].",
                             job[JOB_NAME], job[JOB_MACHINE])
                         self._remote.cancel_job(item["jobId"])
+
+                        self.__logger.info("update exclusion lists with %s",
+                                job[JOB_MACHINE])
                         add_exclusion_node(item, job[JOB_MACHINE])
 
                         item["expCompletion"] = 0
@@ -295,7 +299,7 @@ class AutoSubmitter(SubmitterBase):
         logger.info("submitting job %s.", job_name)
 
         file_name = job_name + '.sh'
-        GromacsBatchFile(job, file_name, job["makeup"]).file()
+        batch_file_factory(job, file_name)
 
         # the job id has index 3 after split
         new_job_id = self._remote.copy_to_remote_and_submit(

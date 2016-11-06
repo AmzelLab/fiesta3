@@ -301,3 +301,14 @@ class GromacsBatchFile(BatchFile):
         if self.__makeup:
             return self.__mdrun()
         return self.__grompp() + self.__mdrun()
+
+
+def batch_file_factory(job, file_name):
+    """A factory method for generating batch files.
+
+    Args:
+        job: the job dict parsed from json.
+        file_name: the batch file's file name.
+    """
+    if job["kind"] == "Gromacs":
+        GromacsBatchFile(job, file_name, job["makeup"]).file()
