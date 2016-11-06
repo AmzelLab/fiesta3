@@ -27,6 +27,22 @@ JOB_NAME = 2
 JOB_STAT = 4
 JOB_MACHINE = 7
 
+MODULE_LOGGER = logging.getLogger('auto_submitter.submitter')
+
+
+def _parse_time_to_second(time_string):
+    """Parse time string to second
+    Args:
+        time_string: string type, like "24:0:0", separated by colon.
+    """
+    time_hms = time_string.split(":")
+    if len(time_hms) != 3:
+        MODULE_LOGGER.error("parse time %s to wrong format", time_string)
+        return sys.maxsize
+
+    return int(time_hms[0]) * 3600 + int(time_hms[1]) * 60 + \
+        int(time_hms[2])
+
 
 class SubmitterBase(object):
     """Jobs submitter implementation.
@@ -204,9 +220,7 @@ class AutoSubmitter(SubmitterBase):
                         job[JOB_ID], item["directory"])
 
                     # If expectation time > job time limit, cancel it
-                    time_hms = item["timeLimit"].split(":")
-                    time_limit = time_hms[0] * 3600 + time_hms[1] * 60 + \
-                        time_hms[2]
+                    time_limit = _parse_time_to_second(item["timeLimit"])
 
                     if item["expCompletion"] > time_limit:
                         self.__logger.error(

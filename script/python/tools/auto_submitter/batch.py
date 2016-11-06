@@ -257,9 +257,11 @@ class GromacsBatchFile(BatchFile):
 
     def __grompp(self):
         """Generate grompp command"""
-        grompp = "gmx_mpi grompp -f %s -o %s.tpr -c %s.gro -p topol.top" \
-            % (self._data["mdp"], self.__next_sec_name(),
-               self.__curr_sec_name())
+
+        # TODO(yliu120): dependency injection for the configuration later.
+        grompp = "mdrun -np 1 gmx_mpi grompp -f %s -o %s.tpr -c %s.gro" \
+                 "-p topol.top" % (self._data["mdp"], self.__next_sec_name(),
+                                   self.__curr_sec_name())
 
         if "index" in self._data:
             grompp += " -n %s.ndx" % self._data["index"]
