@@ -73,6 +73,17 @@ class Remote(object):
         """
         pass
 
+    def run_command(self, command):
+        """Run a user provided command.
+
+        Args:
+            command: string, just like a local command.
+
+        Returns:
+            output
+        """
+        return self._run_command(self._command_prefix().extend(command.split()))
+
     @abstractmethod
     def job_status(self, user):
         """Query job status through ssh.
