@@ -108,6 +108,8 @@ class JobManager(object):
             self.__specialists[job_type] = \
                 SpecialistFactory.create_specialist_with_labor(
                     job_type, self.__labors)
+            if not self.__specialists[job_type]:
+                return False
 
         specialist = self.__specialists[job_type]
         if not specialist.add_job(job):
@@ -115,6 +117,7 @@ class JobManager(object):
             return False
 
         self.__logger.info("job [%s] added", job["name"])
+        return True
 
     def __remove_job(self, job):
         """Remove a job that is currently managed.
@@ -146,7 +149,7 @@ class JobManager(object):
         Returns:
             a result string returned back to client
         """
-        return "ACCEPTED: %s\nDeclined: %s\n" % \
+        return "ACCEPTED: %s\nDECLINED: %s\n" % \
                 (" ".join(accepted), " ".join(declined))
 
     def add_jobs(self, jobs):
@@ -178,7 +181,7 @@ class JobManager(object):
         """
         pass
 
-    def __snapshot(self, filename):
+    def snapshot(self, filename):
         """take the current snapshot of all jobs status.
         Write a job status to a json file, named as filename
 
