@@ -7,6 +7,8 @@ from unittest import mock
 from manager import JobManager
 from manager import Labor
 
+__author__ = 'davislong198833@gmail.com (Yunlong Liu)'
+
 class TestJobManager(unittest.TestCase):
     """Test Cases for JobManager"""
 
