@@ -9,6 +9,7 @@ from manager import Labor
 
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 
+
 class TestJobManager(unittest.TestCase):
     """Test Cases for JobManager"""
 
@@ -58,7 +59,7 @@ class TestJobManager(unittest.TestCase):
     def test_add_valid_jobs(self):
         """Testing job with correct headers and metas"""
 
-        job = {"title": "Test", "data":[]}
+        job = {"title": "Test", "data": []}
         item = {}
         for key in JobManager.REQUIRED:
             item[key] = "ANYTHING"
@@ -72,7 +73,7 @@ class TestJobManager(unittest.TestCase):
     def test_add_valid_jobs_with_additional_meta(self):
         """Testing job with additional metas"""
 
-        job = {"title": "Test", "data":[]}
+        job = {"title": "Test", "data": []}
         item = {}
         for key in JobManager.REQUIRED:
             item[key] = "ANYTHING"
@@ -88,7 +89,3 @@ class TestJobManager(unittest.TestCase):
         """Testing JobManager's take_office method"""
         self.__manager.take_office()
         self.assertTrue(mock_class.called)
-
-
-if __name__ == '__main__':
-    unittest.main()

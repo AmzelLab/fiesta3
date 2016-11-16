@@ -33,10 +33,10 @@ class Labor(object):
             callback: run the callback after task is completed.
         """
         if callback is None:
-            self.__executor.submit(request.action(), request.args())
+            self.__executor.submit(request.action(), *request.args())
         else:
             self.__executor.submit(request.action(),
-                                   request.args()).add_done_callback(callback)
+                                   *request.args()).add_done_callback(callback)
 
 
 class JobManager(object):
