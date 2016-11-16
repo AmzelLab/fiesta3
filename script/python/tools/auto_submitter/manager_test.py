@@ -2,8 +2,10 @@
 """
 
 import unittest
+from unittest import mock
 
 from manager import JobManager
+from manager import Labor
 
 class TestJobManager(unittest.TestCase):
     """Test Cases for JobManager"""
@@ -51,7 +53,6 @@ class TestJobManager(unittest.TestCase):
         result = self.__manager.add_jobs(job)
         self.assertEqual(result.find("DECLINED: ANYTHING") >= 0, True)
 
-
     def test_add_valid_jobs(self):
         """Testing job with correct headers and metas"""
 
@@ -65,6 +66,26 @@ class TestJobManager(unittest.TestCase):
 
         result = self.__manager.add_jobs(job)
         self.assertEqual(result.find("ACCEPTED: ANYTHING") >= 0, True)
+
+    def test_add_valid_jobs_with_additional_meta(self):
+        """Testing job with additional metas"""
+
+        job = {"title": "Test", "data":[]}
+        item = {}
+        for key in JobManager.REQUIRED:
+            item[key] = "ANYTHING"
+
+        item["type"] = "Test"
+        job["data"].append(item)
+
+        result = self.__manager.add_jobs(job)
+        self.assertEqual(result.find("ACCEPTED: ANYTHING") >= 0, True)
+
+    @mock.patch("manager.Labor")
+    def test_take_office(self, mock_class):
+        """Testing JobManager's take_office method"""
+        self.__manager.take_office()
+        self.assertTrue(mock_class.called)
 
 
 if __name__ == '__main__':
