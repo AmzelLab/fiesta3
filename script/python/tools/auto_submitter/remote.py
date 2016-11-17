@@ -61,6 +61,25 @@ class Remote(object):
 
         return (True, result.decode("utf-8").rstrip("\n"))
 
+    @property
+    def remote(self):
+        """return the remote name
+
+        Returns:
+            string, the name of the remote
+        """
+        return self._server
+
+    @property
+    @abstractmethod
+    def batch_system(self):
+        """return the name of the batch system
+
+        Returns:
+            string, the name of the batch system
+        """
+        return ""
+
     @abstractmethod
     def _command_prefix(self, copy=False):
         """Get the command prefix to run remote commands (e.g. ssh)
@@ -110,7 +129,7 @@ class Remote(object):
 
     @abstractmethod
     def tail_log(self, job_id, working_folder, num_lines=1):
-        """Returns the expect completion time of a job
+        """Returns the tail of a job's log
 
         Args:
             job_id: The remote sbatch's job id.
@@ -118,7 +137,7 @@ class Remote(object):
             n: number of lines of the tail.
 
         Returns:
-            A string that contains the expect completion time of job_id.
+            A string
         """
         pass
 
@@ -174,6 +193,15 @@ class SlurmRemote(Remote):
 
         return prefix.split()
 
+    @property
+    def batch_system(self):
+        """return the name of the batch system
+
+        Returns:
+            string, the name of the batch system
+        """
+        return "slurm"
+
     def job_status(self, user):
         """Query job status through ssh.
 
@@ -192,14 +220,15 @@ class SlurmRemote(Remote):
             return []
 
     def tail_log(self, job_id, working_folder, num_lines=1):
-        """Returns the expect completion time of a job
+        """Returns the tail of a job's log
 
         Args:
             job_id: The remote sbatch's job id.
             working_folder: The working folder for job_id
+            n: number of lines of the tail.
 
         Returns:
-            A string that contains the expect completion time of job_id.
+            A string
         """
         self.__logger.info("query log tail on remote.")
         command = self._command_prefix().extend(
@@ -256,3 +285,37 @@ class SlurmRemote(Remote):
         command = self._command_prefix().extend(["scancel", job_id])
         if not self._run_command(command)[0]:
             self.__logger.error("Cancelling job [%s] failed.", job_id)
+
+
+class RemoteFactory(object):
+    """Specialist factory implementation.
+
+    From here you can create all kinds of specialist by the provided
+    common object creation method.
+    """
+    LOGGER = logging.getLogger("job_manager.remote.RemoteFactory")
+
+    # Only needs to append this dict to add new Specialist.
+    REMOTE_TYPE = {
+        "slurm": SlurmRemote,
+    }
+
+    @staticmethod
+    def create_remote(stype, remote_name, shared=False):
+        """call this method to create a remote object of certain type
+
+        Args:
+            stype: string, the type of the submission system
+
+        Returns:
+            A remote instance.
+        """
+        if stype not in RemoteFactory.REMOTE_TYPE:
+            RemoteFactory.LOGGER.error(
+                "no remote named [%s] is available.",
+                stype + "Remote")
+            return None
+
+        RemoteFactory.LOGGER.info("create a remote of type [%s]",
+                                  stype)
+        return RemoteFactory.REMOTE_TYPE[stype](remote_name, shared)
