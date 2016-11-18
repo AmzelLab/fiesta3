@@ -21,14 +21,13 @@ class Singleton(type):
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls.INSTANCE:
-            cls.INSTANCE[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+            cls.INSTANCE[cls] = super(
+                Singleton, cls).__call__(*args, **kwargs)
         return cls.INSTANCE[cls]
 
 
-class Gateway(object):
+class Gateway(object, metaclass=Singleton):
     """Network gateway impl."""
-
-    __metaclass__ = Singleton
 
     def __init__(self):
         """Setup the singleton Gateway object"""
@@ -109,7 +108,6 @@ class Gateway(object):
 
         primary_stats = self.__call_remote_function(remote_name,
                                                     "job_status", username)
-
 
     def submit(self, remote_name, remote_folder, file_name):
         """Copy and submit a remote job
