@@ -5,6 +5,8 @@ Remote class is a class that handles the status of the remote server.
 from abc import ABCMeta
 from abc import abstractmethod
 
+from collections import namedtuple
+
 from subprocess import check_output
 from subprocess import CalledProcessError
 from subprocess import STDOUT
@@ -15,6 +17,8 @@ from datetime import datetime
 import logging
 
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
+
+JobStat = namedtuple('JobStat', ['name', 'id', 'machine', 'stat', 'note'])
 
 
 class Remote(object):
@@ -169,6 +173,10 @@ class SlurmRemote(Remote):
     This class currently only supports SSH protocol to access Remote, which
     will be sufficient in most of the cases.
     """
+    JOB_ID = 0
+    JOB_NAME = 2
+    JOB_STAT = 4
+    JOB_MACHINE = 7
 
     def __init__(self, server, shared=False):
         super(SlurmRemote, self).__init__(server)
@@ -206,7 +214,7 @@ class SlurmRemote(Remote):
         """Query job status through ssh.
 
         Returns:
-            A string list contains the job status returned by remote
+            A list of JobStat.
         """
         self.__logger.info("Querying job_status on remote.")
         status = self._run_command(self._command_prefix().extend(
@@ -214,7 +222,19 @@ class SlurmRemote(Remote):
 
         if status[0]:
             job_status = status[1].split("\n")[1:]
-            return [job.lstrip().split() for job in job_status]
+
+            # return list: job_stats
+            job_stats = []
+            for job in job_status:
+                raw_stat = job.lstrip().split()
+                job_stats.append(
+                    JobStat(name=raw_stat[SlurmRemote.JOB_NAME],
+                            id=raw_stat[SlurmRemote.JOB_ID],
+                            stat=raw_stat[SlurmRemote.JOB_STAT],
+                            note="",
+                            machine=raw_stat[SlurmRemote.JOB_MACHINE]))
+
+            return job_stats
         else:
             self.__logger.error("Failed to query job status.")
             return []
