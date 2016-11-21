@@ -52,7 +52,7 @@ class Gateway(object, metaclass=Singleton):
         try:
             server = self.__remote[remote_name]
         except KeyError:
-            self.__logger.error("No remote object named %s is requested.",
+            self.__logger.error("No remote object named %s has been requested.",
                                 remote_name)
             return None
 
@@ -79,13 +79,14 @@ class Gateway(object, metaclass=Singleton):
         self.__remote[remote_name] = RemoteFactory.create_remote(
             submission_system, remote_name, shared_ssh)
 
-        if not self.run_on_remote(remote_name, "ls")[0]:
-            self.__logger.error("remote server [%s] refuses to connect.",
-                                remote_name)
-            del self.__remote[remote_name]
-            return False
+        if self.__remote[remote_name] and \
+           self.run_on_remote(remote_name, "ls")[0]:
+            return True
 
-        return True
+        self.__logger.error("remote server [%s] refuses to connect.",
+                            remote_name)
+        del self.__remote[remote_name]
+        return False
 
     def job_stats(self, remote_name, username, job_name):
         """Query job stat for a specific job on remote
@@ -99,15 +100,21 @@ class Gateway(object, metaclass=Singleton):
             dict, job stat
         """
         # First, check whether stats are cached
-        self.__js_lock.acquire()
-        if job_name in self.__job_stats:
-            if self.__job_stats[job_name].note == "P":
-                self.__job_stats[job_name].note == ""
-                return self.__job_stats[job_name]
-        self.__js_lock.release()
+       #  self.__js_lock.acquire()
+        # if job_name in self.__job_stats:
+        #     if self.__job_stats[job_name].note == "P":
+        #         self.__job_stats[job_name].note == ""
+        #         return self.__job_stats[job_name]
+        # self.__js_lock.release()
 
+        # TODO(Yunlong Liu): Temp straightforward impl here.
         primary_stats = self.__call_remote_function(remote_name,
                                                     "job_status", username)
+        for stat in primary_stats:
+            if stat.name == job_name:
+                return stat
+
+        return None
 
     def submit(self, remote_name, remote_folder, file_name):
         """Copy and submit a remote job
@@ -161,3 +168,10 @@ class Gateway(object, metaclass=Singleton):
         """
         return self.__call_remote_function(
             remote_name, "tail_log", job_id, working_folder, num_lines)
+
+    def reset(self):
+        """Reset all gateway properties.
+        """
+        self.__remote = {}
+        self.__job_stats = {}
+

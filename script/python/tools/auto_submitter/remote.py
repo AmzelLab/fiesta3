@@ -21,13 +21,11 @@ __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 JobStat = namedtuple('JobStat', ['name', 'id', 'machine', 'stat', 'note'])
 
 
-class Remote(object):
+class Remote(object, metaclass=ABCMeta):
     """An interface to remote proxy object.
     """
-    __metaclass__ = ABCMeta
 
     TIMEOUT = 60
-
     def __init__(self, server):
         """Creating a remote handler.
 
