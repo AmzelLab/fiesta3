@@ -56,7 +56,7 @@ class Gateway(object, metaclass=Singleton):
                                 remote_name)
             return None
 
-        return getattr(server, function_name)(args)
+        return getattr(server, function_name)(*args)
 
     def request_remote(self, remote_name, submission_system, shared_ssh=False):
         """Request a remote with its name and submission system.
@@ -174,4 +174,3 @@ class Gateway(object, metaclass=Singleton):
         """
         self.__remote = {}
         self.__job_stats = {}
-

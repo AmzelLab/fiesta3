@@ -23,7 +23,7 @@ class Labor(object):
         super(Labor, self).__init__()
         self.__executor = ThreadPoolExecutor(max_workers=num_workers)
 
-    def perform(self, request, callback):
+    def perform(self, request, callback=None):
         """do what the request said faithfully.
 
         When the request is completed, run the handler callback.

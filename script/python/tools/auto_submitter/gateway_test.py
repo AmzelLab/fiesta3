@@ -58,7 +58,8 @@ class TestGateway(unittest.TestCase):
         self.__gateway.reset()
         self.__gateway.request_remote("Random", "slurm")
         self.assertTrue(
-                self.__gateway.cancel("Random", "RANDOM_JOB_ID") == None)
+            self.__gateway.cancel("Random", "RANDOM_JOB_ID") == None)
+        test_cancel_job.assert_called_with("RANDOM_JOB_ID")
 
     @mock.patch("remote.Remote.run_command", return_value=(True, ""))
     @mock.patch("remote.SlurmRemote.tail_log", return_value="LOG")
@@ -66,4 +67,6 @@ class TestGateway(unittest.TestCase):
         self.__gateway.reset()
         self.__gateway.request_remote("Random", "slurm")
         self.assertTrue(self.__gateway.tail_log("Random", "RANDOM_JOB_ID",
-            "RANDOM_WORK_DIR") == "LOG")
+                                                "RANDOM_WORK_DIR") == "LOG")
+        test_tail_log.assert_called_with("RANDOM_JOB_ID",
+                                         "RANDOM_WORK_DIR", 1)

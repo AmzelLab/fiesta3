@@ -26,6 +26,7 @@ class Remote(object, metaclass=ABCMeta):
     """
 
     TIMEOUT = 60
+
     def __init__(self, server):
         """Creating a remote handler.
 
@@ -52,6 +53,7 @@ class Remote(object, metaclass=ABCMeta):
         try:
             result = check_output(
                 command, timeout=Remote.TIMEOUT, stderr=STDOUT)
+            print(result)
         except TimeoutExpired:
             command_string = " ".join(command)
             self.__logger.info("Remote command TIMEOUT: %s", command_string)
@@ -103,7 +105,7 @@ class Remote(object, metaclass=ABCMeta):
         Returns:
             output
         """
-        return self._run_command(self._command_prefix().extend(command.split()))
+        return self._run_command(self._command_prefix() + command.split())
 
     @abstractmethod
     def job_status(self, user):
