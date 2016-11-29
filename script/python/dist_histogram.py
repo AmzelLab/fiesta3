@@ -43,9 +43,9 @@ _NUM_COLUMNS = 3
 _COLUMN_WIDTH = 4
 _NUM_BINS = 50
 
-_LEFT_LIM = 1
-_RIGHT_LIM = 8
-_NUM_SAMPLE = 50
+_LEFT_LIM = 0
+_RIGHT_LIM = 10
+_NUM_SAMPLE = 200
 
 
 def plot_data(data, file_name):
@@ -118,9 +118,11 @@ def process_trajectory(universe, group1, group2):
 
         i = 0
         for (res_one, res_two) in itertools.product(group_one, group_two):
-            raw_data[time_step.frame][i] = np.amin(
+            min_dist = np.amin(
                 distance_array(res_one.positions, res_two.positions,
                                backend="OpenMP"))
+            raw_data[time_step.frame][i] = min_dist if min_dist < _RIGHT_LIM \
+                else _RIGHT_LIM
             i += 1
 
     raw_data = np.transpose(raw_data)
