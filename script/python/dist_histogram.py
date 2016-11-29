@@ -55,22 +55,21 @@ def plot_data(data, file_name):
         data: dict type, (name, numpy-array [float32])
         file_name: figure file name
     """
-    num_plots = len(data)
-    num_rows = int(np.ceil(float(num_plots) / _NUM_COLUMNS))
+    num_rows = int(np.ceil(float(len(data)) / _NUM_COLUMNS))
 
     # create figure handle
     plt.figure(figsize=(_NUM_COLUMNS * _COLUMN_WIDTH,
                         num_rows * _COLUMN_WIDTH))
 
-    plt_index = 0
-    for (name, dist_data) in data.iteritems():
+    for (plt_index, (name, dist_data)) in enumerate(data.iteritems()):
         row_index = plt_index / _NUM_COLUMNS
         col_index = plt_index % _NUM_COLUMNS
 
         axe = plt.subplot2grid((num_rows, _NUM_COLUMNS),
                                (row_index, col_index))
 
-        counts, bins, _ = axe.hist(dist_data, _NUM_BINS, normed=1,
+        weights = np.ones_like(dist_data) / len(dist_data)
+        counts, bins, _ = axe.hist(dist_data, _NUM_BINS, weights=weights,
                                    range=(_LEFT_LIM, _RIGHT_LIM),
                                    facecolor='green', alpha=0.25)
 
@@ -84,8 +83,6 @@ def plot_data(data, file_name):
         axe.set_ylabel(r"Frequency in %d frames" % len(dist_data),
                        fontsize=10, color='blue', variant='small-caps')
         axe.set_xlim(left=_LEFT_LIM, right=_RIGHT_LIM)
-
-        plt_index += 1
 
     plt.tight_layout()
     plt.savefig(file_name)
@@ -116,23 +113,21 @@ def process_trajectory(universe, group1, group2):
         if time_step.frame % 100 == 0:
             log.info("processing frame %d.", time_step.frame)
 
-        i = 0
-        for (res_one, res_two) in itertools.product(group_one, group_two):
+        for (index, (res_one, res_two)) in enumerate(
+                itertools.product(group_one, group_two)):
             min_dist = np.amin(
                 distance_array(res_one.positions, res_two.positions,
                                backend="OpenMP"))
-            raw_data[time_step.frame][i] = min_dist if min_dist < _RIGHT_LIM \
-                else _RIGHT_LIM
-            i += 1
+            raw_data[time_step.frame][index] = \
+                min_dist if min_dist < _RIGHT_LIM else _RIGHT_LIM
 
     raw_data = np.transpose(raw_data)
 
-    i = 0
-    for (res_one, res_two) in itertools.product(group_one, group_two):
+    for (index, (res_one, res_two)) in enumerate(itertools.product(group_one,
+                                                                   group_two)):
         key = ("%s_%d_1" % (res_one.resname, res_one.resid),
                "%s_%d_2" % (res_one.resname, res_two.resid))
-        data[key] = raw_data[i]
-        i += 1
+        data[key] = raw_data[index]
 
     return data
 
