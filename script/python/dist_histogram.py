@@ -1,7 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Analysis code for NIS project: distance histograms.
+"""Analysis code for NIS project: pair-wise distance histograms.
+
+This program reads in a trajectory with the corresponding topology file.
+The user should specify two groups of residues using MDAnalysis's selection
+string. For example,
+
+--group1 "protein and resid 1 2 3"
+--group2 "protein and resid 4 5 6"
+
+Then the program will calculate the minimun contact distances for every pair
+of residues defined in the product space of group1 and group2. The program will
+plot the distance with a banch of histograms and will calculate a fitting curve
+for each histograms.
 """
 
 import argparse
@@ -13,9 +25,12 @@ import numpy as np
 from MDAnalysis import Universe
 from MDAnalysis.lib.distances import distance_array
 
+from scipy.interpolate import interp1d
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
 
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 
@@ -23,43 +38,59 @@ DESCRIPTION = 'pair wise distance histograms for selected atoms'
 
 log.setLevel("INFO")
 
+# Global constants for plotting data.
+_NUM_COLUMNS = 3
+_COLUMN_WIDTH = 4
+_NUM_BINS = 50
 
-def plot_data(data, frames, file_name):
+_LEFT_LIM = 1
+_RIGHT_LIM = 8
+_NUM_SAMPLE = 50
 
-    # plotting data
+
+def plot_data(data, file_name):
+    """plot data to histograms.
+
+    Args:
+        data: dict type, (name, numpy-array [float32])
+        file_name: figure file name
+    """
     num_plots = len(data)
-    columns = 3
-    rows = num_plots / 3
+    num_rows = int(np.ceil(float(num_plots) / _NUM_COLUMNS))
 
-    # figure handle
-    fig = plt.figure(figsize=(columns * 4, rows * 4))
-    keys = sorted(data.keys())
+    # create figure handle
+    plt.figure(figsize=(_NUM_COLUMNS * _COLUMN_WIDTH,
+                        num_rows * _COLUMN_WIDTH))
 
-    for i in xrange(0, num_plots):
-        '''r is the row index, c is the col index'''
-        r = i / columns
-        c = i % columns
+    plt_index = 0
+    for (name, dist_data) in data.iteritems():
+        row_index = plt_index / _NUM_COLUMNS
+        col_index = plt_index % _NUM_COLUMNS
 
-        ax = plt.subplot2grid((rows, columns), (r, c))
-        resname_id = keys[i]
-        counts, bins = np.histogram(np.array(data[resname_id]), [
-                                    0.2 * x for x in range(10, 40)])
-        normed_counts = map(lambda x: float(x) / frames, counts)
-        ax.plot(bins, normed_counts + [0], 'b-')
-        ax.set_xlabel("Residue " + resname_id + "          (A)",
-                      fontsize=10, color='blue', variant='small-caps')
-        ax.set_ylabel(r'Frequency' + ' in ' + str(frames) + ' frames',
-                      fontsize=10, color='blue', variant='small-caps')
-        ax.set_xlim(left=1, right=8)
-        ax.set_ylim(0, max(normed_counts) * 2)
+        axe = plt.subplot2grid((num_rows, _NUM_COLUMNS),
+                               (row_index, col_index))
 
-        fig.suptitle(r'histogram of contact', fontsize=20,
-                     color='blue', weight='bold', y=1.02)
-        plt.tight_layout()
-        plt.savefig(file_name + ".png")
-        plt.close()
+        counts, bins, _ = axe.hist(dist_data, _NUM_BINS, normed=1,
+                                   range=(_LEFT_LIM, _RIGHT_LIM),
+                                   facecolor='green', alpha=0.25)
 
-fid = 0
+        fitting_curve = interp1d(bins, np.append(counts, 0.0), kind='cubic')
+        fitting_x = np.linspace(_LEFT_LIM, _RIGHT_LIM,
+                                _NUM_SAMPLE, endpoint=True)
+        axe.plot(fitting_x, fitting_curve(fitting_x), 'r-', linewidth=2.0)
+
+        axe.set_xlabel("%s vs. %s (A)" % (name[0][:-2], name[1][:-2]),
+                       fontsize=10, color='blue', variant='small-caps')
+        axe.set_ylabel(r"Frequency in %d frames" % len(dist_data),
+                       fontsize=10, color='blue', variant='small-caps')
+        axe.set_xlim(left=_LEFT_LIM, right=_RIGHT_LIM)
+
+        plt_index += 1
+
+    plt.tight_layout()
+    plt.savefig(file_name)
+    log.info("save figure to file %s", file_name)
+    plt.close()
 
 
 def process_trajectory(universe, group1, group2):
@@ -88,7 +119,8 @@ def process_trajectory(universe, group1, group2):
         i = 0
         for (res_one, res_two) in itertools.product(group_one, group_two):
             raw_data[time_step.frame][i] = np.amin(
-                distance_array(res_one.positions, res_two.positions))
+                distance_array(res_one.positions, res_two.positions,
+                               backend="OpenMP"))
             i += 1
 
     raw_data = np.transpose(raw_data)
@@ -139,7 +171,8 @@ def main():
             pickle.dump(data, output, pickle.HIGHEST_PROTOCOL)
 
     log.info("start to plot histogram")
-    plot_data(data, 1000, args.png)
+    plot_data(data, args.png)
+    log.info("dist_histogram terminates")
 
 
 if __name__ == "__main__":
