@@ -144,9 +144,12 @@ def main():
     parser.add_argument('trajectory', metavar='TRAJECTORY', nargs='?',
                         help='input trajectory file (.xtc/.trr)')
 
-    parser.add_argument('--png', help='output figure file (.png)')
-    parser.add_argument('--group1', help='selection string for group one')
-    parser.add_argument('--group2', help='selection string for group two')
+    parser.add_argument('--png', required=True,
+                        help='output figure file (.png)')
+    parser.add_argument('--group1', required=True,
+                        help='selection string for group one')
+    parser.add_argument('--group2', required=True,
+                        help='selection string for group two')
     parser.add_argument('--dump', help='binary data file to dump')
 
     args = parser.parse_args()
