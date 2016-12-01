@@ -47,6 +47,9 @@ _LEFT_LIM = 0
 _RIGHT_LIM = 10
 _NUM_SAMPLE = 200
 
+_UNIT = {"residue": ("residues", lambda grp: grp.positions),
+         "atom": ("atoms", lambda atom: np.array([atom.position]))}
+
 
 def plot_data(data, file_name):
     """plot data to histograms.
@@ -90,24 +93,34 @@ def plot_data(data, file_name):
     plt.close()
 
 
-def process_trajectory(universe, group1, group2):
+def process_trajectory(universe, group1, group2, unit1, unit2):
     """process the trajectory and calculate the pair-wise min distances
 
     Args:
         universe: Universe Object
         group1: selection group1
         group2: selection group2
+        unit1: string, unit for group1 ("residues/atoms")
+        unit2: string, unit for group2 ("residues/atoms")
 
     Returns:
         data: dict type, (name, numpy-array [float32])
 
     """
     data = {}
-    group_one = universe.select_atoms(group1).residues
-    group_two = universe.select_atoms(group2).residues
+    group_one = getattr(universe.select_atoms(group1), _UNIT[unit1][0])
+    group_two = getattr(universe.select_atoms(group2), _UNIT[unit2][0])
 
     raw_data = np.empty([universe.trajectory.n_frames,
                          len(group_one) * len(group_two)], dtype=float)
+
+    log.info("%d residues [%d atoms] selected in group 1.", len(group_one),
+             len(group_one.atoms))
+    log.info("%d residues [%d atoms] selected in group 2.", len(group_two),
+             len(group_two.atoms))
+
+    fetch_position_1 = _UNIT[unit1][1]
+    fetch_position_2 = _UNIT[unit2][1]
 
     for time_step in universe.trajectory:
         if time_step.frame % 100 == 0:
@@ -116,7 +129,8 @@ def process_trajectory(universe, group1, group2):
         for (index, (res_one, res_two)) in enumerate(
                 itertools.product(group_one, group_two)):
             min_dist = np.amin(
-                distance_array(res_one.positions, res_two.positions,
+                distance_array(fetch_position_1(res_one),
+                               fetch_position_2(res_two),
                                backend="OpenMP"))
             raw_data[time_step.frame][index] = \
                 min_dist if min_dist < _RIGHT_LIM else _RIGHT_LIM
@@ -150,6 +164,12 @@ def main():
                         help='selection string for group one')
     parser.add_argument('--group2', required=True,
                         help='selection string for group two')
+    parser.add_argument('--unit1', default="residue",
+                        choices=["residue", "atom"],
+                        help='unit for group one [residue/atom]')
+    parser.add_argument('--unit2', default="residue",
+                        choices=["residue", "atom"],
+                        help='unit for group two [residue/atom]')
     parser.add_argument('--dump', help='binary data file to dump')
 
     args = parser.parse_args()
@@ -164,7 +184,8 @@ def main():
         exit()
 
     log.info("read trajectory %s", args.trajectory)
-    data = process_trajectory(universe, args.group1, args.group2)
+    data = process_trajectory(universe, args.group1, args.group2,
+                              args.unit1, args.unit2)
 
     if args.dump:
         with open(args.dump, 'wb') as output:
