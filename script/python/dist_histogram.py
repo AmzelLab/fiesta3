@@ -47,8 +47,19 @@ _LEFT_LIM = 0
 _RIGHT_LIM = 10
 _NUM_SAMPLE = 200
 
-_UNIT = {"residue": ("residues", lambda grp: grp.positions),
-         "atom": ("atoms", lambda atom: np.array([atom.position]))}
+# index used for refering elements in _UNIT
+_TYPE = 0
+_POSITION = 1
+_LABEL = 2
+
+_UNIT = {"residue": ("residues",
+                     lambda grp: grp.positions,
+                     lambda grp, i: "%s_%d_%d" % (grp.resname,
+                                                  grp.resid, i)),
+         "atom": ("atoms",
+                  lambda atom: np.array([atom.position]),
+                  lambda atom, i: "%s_%d_%s_%d" % (
+                      atom.resname, atom.resid, atom.name, i))}
 
 
 def plot_data(data, file_name):
@@ -108,8 +119,8 @@ def process_trajectory(universe, group1, group2, unit1, unit2):
 
     """
     data = {}
-    group_one = getattr(universe.select_atoms(group1), _UNIT[unit1][0])
-    group_two = getattr(universe.select_atoms(group2), _UNIT[unit2][0])
+    group_one = getattr(universe.select_atoms(group1), _UNIT[unit1][_TYPE])
+    group_two = getattr(universe.select_atoms(group2), _UNIT[unit2][_TYPE])
 
     raw_data = np.empty([universe.trajectory.n_frames,
                          len(group_one) * len(group_two)], dtype=float)
@@ -119,8 +130,8 @@ def process_trajectory(universe, group1, group2, unit1, unit2):
     log.info("%d residues [%d atoms] selected in group 2.", len(group_two),
              len(group_two.atoms))
 
-    fetch_position_1 = _UNIT[unit1][1]
-    fetch_position_2 = _UNIT[unit2][1]
+    fetch_position_1 = _UNIT[unit1][_POSITION]
+    fetch_position_2 = _UNIT[unit2][_POSITION]
 
     for time_step in universe.trajectory:
         if time_step.frame % 100 == 0:
@@ -137,10 +148,12 @@ def process_trajectory(universe, group1, group2, unit1, unit2):
 
     raw_data = np.transpose(raw_data)
 
+    labeling_1 = _UNIT[unit1][_LABEL]
+    labeling_2 = _UNIT[unit2][_LABEL]
+
     for (index, (res_one, res_two)) in enumerate(itertools.product(group_one,
                                                                    group_two)):
-        key = ("%s_%d_1" % (res_one.resname, res_one.resid),
-               "%s_%d_2" % (res_one.resname, res_two.resid))
+        key = (labeling_1(res_one, 1), (labeling_2(res_two, 2)))
         data[key] = raw_data[index]
 
     return data
