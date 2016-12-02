@@ -39,7 +39,6 @@ DESCRIPTION = 'pair wise distance histograms for selected atoms'
 log.setLevel("INFO")
 
 # Global constants for plotting data.
-_NUM_COLUMNS = 3
 _COLUMN_WIDTH = 4
 _NUM_BINS = 50
 
@@ -62,24 +61,25 @@ _UNIT = {"residue": ("residues",
                       atom.resname, atom.resid, atom.name, i))}
 
 
-def plot_data(data, file_name):
+def plot_data(data, file_name, num_columns):
     """plot data to histograms.
 
     Args:
         data: dict type, (name, numpy-array [float32])
         file_name: figure file name
+        num_columns: int, number of columns in the plot
     """
-    num_rows = int(np.ceil(float(len(data)) / _NUM_COLUMNS))
+    num_rows = int(np.ceil(float(len(data)) / num_columns))
 
     # create figure handle
-    plt.figure(figsize=(_NUM_COLUMNS * _COLUMN_WIDTH,
+    plt.figure(figsize=(num_columns * _COLUMN_WIDTH,
                         num_rows * _COLUMN_WIDTH))
 
     for (plt_index, (name, dist_data)) in enumerate(data.iteritems()):
-        row_index = plt_index / _NUM_COLUMNS
-        col_index = plt_index % _NUM_COLUMNS
+        row_index = plt_index / num_columns
+        col_index = plt_index % num_columns
 
-        axe = plt.subplot2grid((num_rows, _NUM_COLUMNS),
+        axe = plt.subplot2grid((num_rows, num_columns),
                                (row_index, col_index))
 
         weights = np.ones_like(dist_data) / len(dist_data)
@@ -183,6 +183,8 @@ def main():
     parser.add_argument('--unit2', default="residue",
                         choices=["residue", "atom"],
                         help='unit for group two [residue/atom]')
+    parser.add_argument('--width', default=3, type=int,
+                        help='column width for the output plot')
     parser.add_argument('--dump', help='binary data file to dump')
 
     args = parser.parse_args()
@@ -205,7 +207,8 @@ def main():
             pickle.dump(data, output, pickle.HIGHEST_PROTOCOL)
 
     log.info("start to plot histogram")
-    plot_data(data, args.png)
+
+    plot_data(data, args.png, args.width)
     log.info("dist_histogram terminates")
 
 
