@@ -44,6 +44,8 @@ _NUM_BINS = 50
 
 _LEFT_LIM = 0
 _RIGHT_LIM = 10
+
+# Used for plotting fitting curve. The more samples, the smoother.
 _NUM_SAMPLE = 200
 
 # index used for refering elements in _UNIT
@@ -51,6 +53,7 @@ _TYPE = 0
 _POSITION = 1
 _LABEL = 2
 
+# define AtomGroup-type specific properties.
 _UNIT = {"residue": ("residues",
                      lambda grp: grp.positions,
                      lambda grp, i: "%s_%d_%d" % (grp.resname,
