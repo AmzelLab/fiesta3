@@ -5,8 +5,11 @@
 """
 
 from collections import namedtuple
+from datetime import datetime
 from subprocess import check_output
 from subprocess import STDOUT
+
+from json import dumps
 
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 
@@ -14,11 +17,11 @@ _TIMEOUT = 10
 
 # Convenient class JOB as namedtuple
 Job = namedtuple('Job', ['name', 'partition', 'job_id', 'state', 'is_slow',
-                         'nodelist', 'running_time', 'time_limit'])
+                         'nodelist', 'running_time', 'time_limit', 'log'])
 
 
 def _run_bash(command_string):
-    """TODO: Docstring for run_bash.
+    """Simply run a bash command.
     Args:
         command_string: the bash command string
 
@@ -28,6 +31,52 @@ def _run_bash(command_string):
     result = None
     result = check_output(command_string, timeout=_TIMEOUT, stderr=STDOUT)
     return result.decode("utf-8").rstrip("\n")
+
+
+def _parse_node_list(nodelist_string):
+    """Parse a node list string to a list object
+    """
+    # TODO(yliu120) extends to real parse
+    return nodelist_string.split(',')
+
+
+def _job_detail(job):
+    """Extend details for a job item.
+
+    Args:
+        job: job object. (namedtuple defined as above)
+    """
+    # First we want to run "scontrol show jobid" on every job.
+    scontrol = "scontrol show jobid %s | grep StdOut" % job.job_id
+    output = _run_bash(scontrol)
+    log_path = output.strip().split('=')[1]
+
+    # Second we want to fetch out the last 10 lines of the log
+    job.log = _run_bash("tail %s" % log_path)
+
+    # if we are on gpu, we should always check whether our jobs
+    # are running slow
+    if job.partition != "gpu":
+        return
+
+    # check is_slow on gpu jobs using perf
+    # we need to determine a representative process of that job
+    # always pick the last one in the node list for measurement
+    node = job.nodelist[0]
+    list_pid = "ssh %s ps -C gmx_mpi -o pid" % node
+    output = _run_bash(list_pid)
+    pid = output.split("\n").pop()
+
+    # Check CPU freq using perf
+    check_cpu_freq = "ssh %s perf stat -p %s -o tmp.%s.cpu sleep 0.2" % (
+        node, pid, node)
+    _run_bash(check_cpu_freq)
+    output = _run_bash("grep GHz ~/tmp.%s.cpu" % node).split()
+
+    # Magic number:
+    # Output should look like:
+    # ['7,381,669,365', 'cycles', '#', '2.486', 'GHz', '[100.00%]']
+    job.is_slow = False if float(output[3]) > 2.0 else True
 
 
 def sqme():
@@ -48,11 +97,10 @@ def sqme():
                   is_slow=False,
                   running_time=job_item[5],
                   time_limit=job_item[6],
-                  nodelist=job_item[8])
+                  nodelist=_parse_node_list(job_item[8]),
+                  log=None)
         job_list += job
 
-    for job in job_list:
-        print(job)
     return job_list
 
 
@@ -65,7 +113,7 @@ def detail(jobs):
     Returns:
         A dictionary contains detailed info of jobs
     """
-    pass
+    return [_job_detail(job) for job in jobs]
 
 
 def dump_json(jobs):
@@ -74,7 +122,9 @@ def dump_json(jobs):
     Args:
         jobs: a list of job objects after detailed.
     """
-    pass
+    json_dict = {"time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    json_dict["jobs"] = [job._asdict() for job in jobs]
+    dumps(json_dict)
 
 
 def main():
