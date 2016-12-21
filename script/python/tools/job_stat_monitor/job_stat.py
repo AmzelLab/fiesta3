@@ -4,7 +4,6 @@
 """Job status script running/testing on MARCC. (non-local script)
 """
 
-from collections import namedtuple
 from datetime import datetime
 from subprocess import check_output
 from subprocess import STDOUT
@@ -14,10 +13,6 @@ from json import dumps
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 
 _TIMEOUT = 10
-
-# Convenient class JOB as namedtuple
-Job = namedtuple('Job', ['name', 'partition', 'job_id', 'state', 'is_slow',
-                         'nodelist', 'running_time', 'time_limit', 'log'])
 
 
 def _run_bash(command_string):
@@ -29,7 +24,8 @@ def _run_bash(command_string):
         Output of the bash command
     """
     result = None
-    result = check_output(command_string, timeout=_TIMEOUT, stderr=STDOUT)
+    result = check_output(command_string, shell=True,
+                          timeout=_TIMEOUT, stderr=STDOUT)
     return result.decode("utf-8").rstrip("\n")
 
 
@@ -47,22 +43,22 @@ def _job_detail(job):
         job: job object. (namedtuple defined as above)
     """
     # First we want to run "scontrol show jobid" on every job.
-    scontrol = "scontrol show jobid %s | grep StdOut" % job.job_id
+    scontrol = "scontrol show jobid %s | grep StdOut" % job["job_id"]
     output = _run_bash(scontrol)
     log_path = output.strip().split('=')[1]
 
     # Second we want to fetch out the last 10 lines of the log
-    job.log = _run_bash("tail %s" % log_path)
+    job["log"] = _run_bash("tail %s" % log_path)
 
     # if we are on gpu, we should always check whether our jobs
     # are running slow
-    if job.partition != "gpu":
+    if job["partition"] != "gpu":
         return
 
     # check is_slow on gpu jobs using perf
     # we need to determine a representative process of that job
     # always pick the last one in the node list for measurement
-    node = job.nodelist[0]
+    node = job["nodelist"][0]
     list_pid = "ssh %s ps -C gmx_mpi -o pid" % node
     output = _run_bash(list_pid)
     pid = output.split("\n").pop()
@@ -76,7 +72,7 @@ def _job_detail(job):
     # Magic number:
     # Output should look like:
     # ['7,381,669,365', 'cycles', '#', '2.486', 'GHz', '[100.00%]']
-    job.is_slow = False if float(output[3]) > 2.0 else True
+    job["is_slow"] = False if float(output[3]) > 2.0 else True
 
 
 def sqme():
@@ -90,16 +86,16 @@ def sqme():
     job_info = _run_bash("sqme").split("\n")[2:]
     for line in job_info:
         job_item = line.split()
-        job = Job(job_id=job_item[0],
-                  partition=job_item[1],
-                  name=job_item[2],
-                  state=job_item[4],
-                  is_slow=False,
-                  running_time=job_item[5],
-                  time_limit=job_item[6],
-                  nodelist=_parse_node_list(job_item[8]),
-                  log=None)
-        job_list += job
+        job = dict(job_id=job_item[0],
+                   partition=job_item[1],
+                   name=job_item[2],
+                   state=job_item[4],
+                   is_slow=False,
+                   running_time=job_item[5],
+                   time_limit=job_item[6],
+                   nodelist=_parse_node_list(job_item[8]),
+                   log=None)
+        job_list.append(job)
 
     return job_list
 
@@ -123,7 +119,7 @@ def dump_json(jobs):
         jobs: a list of job objects after detailed.
     """
     json_dict = {"time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    json_dict["jobs"] = [job._asdict() for job in jobs]
+    json_dict["jobs"] = jobs
     dumps(json_dict)
 
 
