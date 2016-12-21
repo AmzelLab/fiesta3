@@ -3,8 +3,6 @@
 
 """Job status script running/testing on MARCC. (non-local script)
 """
-import asyncio
-import sys
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -12,6 +10,9 @@ from subprocess import check_output
 from subprocess import STDOUT
 
 from json import dump
+
+import asyncio
+import sys
 
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 
@@ -103,7 +104,7 @@ def sqme():
 
     return job_list
 
-@asyncio.coroutine
+
 def detail(jobs, executor):
     """Fill out all information of current jobs.
 
@@ -115,8 +116,8 @@ def detail(jobs, executor):
     """
     loop = asyncio.get_event_loop()
     tasks = [loop.run_in_executor(executor, _job_detail, job) for job in jobs]
-    completed = yield from asyncio.wait(tasks)
-    return [task.result() for task in completed]
+    loop.run_until_complete(tasks)
+    return [task.result() for task in tasks]
 
 
 def dump_json(jobs):
