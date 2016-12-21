@@ -1,0 +1,12 @@
+{
+  "linters": {
+    "python": {
+      "type": "pep8",
+      "include": "(\\.py$)"
+    },
+    "cpp": {
+      "type": "cpplint",
+      "include": "(\\.cc$)"
+    }
+  }
+}

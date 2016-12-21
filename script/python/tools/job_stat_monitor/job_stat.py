@@ -116,7 +116,7 @@ def detail(jobs, executor):
     """
     loop = asyncio.get_event_loop()
     tasks = [loop.run_in_executor(executor, _job_detail, job) for job in jobs]
-    loop.run_until_complete(tasks)
+    loop.run_until_complete(asyncio.wait(tasks))
     return [task.result() for task in tasks]
 
 
