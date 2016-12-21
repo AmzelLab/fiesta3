@@ -103,8 +103,8 @@ def sqme():
 
     return job_list
 
-
-async def detail(jobs, executor):
+@asyncio.coroutine
+def detail(jobs, executor):
     """Fill out all information of current jobs.
 
     Args:
@@ -115,7 +115,7 @@ async def detail(jobs, executor):
     """
     loop = asyncio.get_event_loop()
     tasks = [loop.run_in_executor(executor, _job_detail, job) for job in jobs]
-    completed, pending = await asyncio.wait(tasks)
+    completed = yield from asyncio.wait(tasks)
     return [task.result() for task in completed]
 
 
