@@ -3,12 +3,15 @@
 
 """Job status script running/testing on MARCC. (non-local script)
 """
+import asyncio
+import sys
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from subprocess import check_output
 from subprocess import STDOUT
 
-from json import dumps
+from json import dump
 
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 
@@ -53,7 +56,7 @@ def _job_detail(job):
     # if we are on gpu, we should always check whether our jobs
     # are running slow
     if job["partition"] != "gpu":
-        return
+        return job
 
     # check is_slow on gpu jobs using perf
     # we need to determine a representative process of that job
@@ -73,6 +76,7 @@ def _job_detail(job):
     # Output should look like:
     # ['7,381,669,365', 'cycles', '#', '2.486', 'GHz', '[100.00%]']
     job["is_slow"] = False if float(output[3]) > 2.0 else True
+    return job
 
 
 def sqme():
@@ -100,7 +104,7 @@ def sqme():
     return job_list
 
 
-def detail(jobs):
+async def detail(jobs, executor):
     """Fill out all information of current jobs.
 
     Args:
@@ -109,7 +113,10 @@ def detail(jobs):
     Returns:
         A dictionary contains detailed info of jobs
     """
-    return [_job_detail(job) for job in jobs]
+    loop = asyncio.get_event_loop()
+    tasks = [loop.run_in_executor(executor, _job_detail, job) for job in jobs]
+    completed, pending = await asyncio.wait(tasks)
+    return [task.result() for task in completed]
 
 
 def dump_json(jobs):
@@ -120,13 +127,15 @@ def dump_json(jobs):
     """
     json_dict = {"time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
     json_dict["jobs"] = jobs
-    dumps(json_dict)
+    dump(json_dict, sys.stdout)
 
 
 def main():
     """Main program to invoke job stats query.
     """
-    dump_json(detail(sqme()))
+    executor = ThreadPoolExecutor(max_workers=8)
+    dump_json(detail(sqme(), executor))
+    executor.shutdown()
 
 
 if __name__ == "__main__":
