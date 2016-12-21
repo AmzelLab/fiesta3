@@ -38,19 +38,21 @@ def sqme():
     """
     job_list = []
 
-    job_info = _run_bash("sqme").split("\n")[1:]
+    job_info = _run_bash("sqme").split("\n")[2:]
     for line in job_info:
-        job_item = line.split(" ")
+        job_item = line.split()
         job = Job(job_id=job_item[0],
                   partition=job_item[1],
                   name=job_item[2],
                   state=job_item[4],
+                  is_slow=False,
                   running_time=job_item[5],
                   time_limit=job_item[6],
                   nodelist=job_item[8])
         job_list += job
 
-    print job_list
+    for job in job_list:
+        print(job)
     return job_list
 
 
