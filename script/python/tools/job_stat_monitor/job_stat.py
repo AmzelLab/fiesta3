@@ -46,6 +46,10 @@ def _job_detail(job):
     Args:
         job: job object. (namedtuple defined as above)
     """
+    # This is only for jobs that are running
+    if job["state"] != "RUNNING":
+        return job
+
     # First we want to run "scontrol show jobid" on every job.
     scontrol = "scontrol show jobid %s | grep StdOut" % job["job_id"]
     output = _run_bash(scontrol)
@@ -99,7 +103,7 @@ def sqme():
                    running_time=job_item[5],
                    time_limit=job_item[6],
                    nodelist=_parse_node_list(job_item[8]),
-                   log=None)
+                   log="N/A")
         job_list.append(job)
 
     return job_list
