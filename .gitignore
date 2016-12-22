@@ -6,6 +6,9 @@ __pycache__
 *.1
 *_current.json
 
+.DS_Store
+*.DS_Store
+
 exclusive_node
 exclusion_node
 exclusive_nodes

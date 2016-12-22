@@ -6,6 +6,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from datetime import timedelta
 from subprocess import check_output
 from subprocess import STDOUT
 
@@ -84,8 +85,8 @@ def _job_detail(job):
     return job
 
 
-def sqme():
-    """list all my jobs.
+def source():
+    """source all my recent jobs.
 
     Returns:
         A dictionary contains primary info of jobs
@@ -93,8 +94,28 @@ def sqme():
     job_list = []
 
     job_info = _run_bash("sqme").split("\n")[2:]
+    # Another source:
+    sacct = "sacct --format=jobid,partition,jobname,"       \
+            "user,state,elapsed,timelimit,nnodes,nodelist " \
+            "--state=completed,cancelled,failed,timeout"
+
+    # Add starttime and endtime flag.
+    today = datetime.today()
+    week_ago = today - timedelta(days=7)
+
+    sacct += " -starttime=%s --endtime=%s" % (
+        today.strftime("%m/%d/%y"), week_ago.strftime("%m/%d/%y"))
+
+    job_info = _run_bash(sacct).split("\n")[2:]
     for line in job_info:
         job_item = line.split()
+
+        # Here we omit some invalid job lines.
+        # See the above format of query output, length=9
+        # And each column's fieldname is labelled above.
+        if len(job_item) < 9:
+            continue
+
         job = dict(job_id=job_item[0],
                    partition=job_item[1],
                    name=job_item[2],
@@ -139,7 +160,7 @@ def main():
     """Main program to invoke job stats query.
     """
     executor = ThreadPoolExecutor(max_workers=8)
-    dump_json(detail(sqme(), executor))
+    dump_json(detail(source(), executor))
     executor.shutdown()
 
 
