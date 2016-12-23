@@ -19,6 +19,7 @@ import sys
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 
 _TIMEOUT = 10
+_SUPERVISING_PART = ["pretestgp", "gpu", "gpuscav"]
 
 
 def _run_bash(command_string):
@@ -75,7 +76,7 @@ def _job_detail(job):
 
     # if we are on gpu, we should always check whether our jobs
     # are running slow
-    if job["partition"] != "gpu":
+    if job["partition"] not in _SUPERVISING_PART:
         return job
 
     # check is_slow on gpu jobs using perf
