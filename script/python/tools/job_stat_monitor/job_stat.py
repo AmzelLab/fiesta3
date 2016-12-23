@@ -13,6 +13,7 @@ from subprocess import STDOUT
 from json import dump
 
 import asyncio
+import re
 import sys
 
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
@@ -34,11 +35,24 @@ def _run_bash(command_string):
     return result.decode("utf-8").rstrip("\n")
 
 
-def _parse_node_list(nodelist_string):
-    """Parse a node list string to a list object
+def _fetch_first_node(nodelist_string):
+    """fetch the first node in the nodelist as a rep.
+    The nodelist may have forms:
+        1) compute0530
+        2) compute[0488,0493,0582,0663]
+        3) compute[0396-0397,0414-0416,0664-0666]
+    Args:
+        nodelist_string: the node list string returned by SLURM.
+
+    Returns:
+        the first node in the list
     """
-    # TODO(yliu120) extends to real parse
-    return nodelist_string.split(',')
+    if not nodelist_string:
+        raise ValueError("Nodelist string shouldn't be empty")
+
+    matcher = re.compile('([0-9]+|[a-z]+)')
+    matched = matcher.findall(nodelist_string)
+    return matched[0] + matched[1]
 
 
 def _job_detail(job):
@@ -67,7 +81,7 @@ def _job_detail(job):
     # check is_slow on gpu jobs using perf
     # we need to determine a representative process of that job
     # always pick the last one in the node list for measurement
-    node = job["nodelist"][0]
+    node = _fetch_first_node(job["nodelist"])
     list_pid = "ssh %s ps -C gmx_mpi -o pid" % node
     output = _run_bash(list_pid)
     pid = output.split("\n").pop()
@@ -82,11 +96,14 @@ def _job_detail(job):
     # Output should look like:
     # ['7,381,669,365', 'cycles', '#', '2.486', 'GHz', '[100.00%]']
     job["is_slow"] = False if float(output[3]) > 2.0 else True
+
+    # Clean up and return
+    _run_bash("rm ~/tmp.%s.cpu" % node)
     return job
 
 
 def source():
-    """source all my recent jobs.
+    """source all my recent jobs. (recent 3 days)
 
     Returns:
         A dictionary contains primary info of jobs
@@ -99,12 +116,9 @@ def source():
             "user,state,elapsed,timelimit,nnodes,nodelist " \
             "--state=completed,cancelled,failed,timeout"
 
-    # Add starttime and endtime flag.
-    today = datetime.today()
-    week_ago = today - timedelta(days=7)
-
-    sacct += " -starttime=%s --endtime=%s" % (
-        today.strftime("%m/%d/%y"), week_ago.strftime("%m/%d/%y"))
+    # Add starttime flag.
+    week_ago = datetime.today() - timedelta(days=3)
+    sacct += " --starttime=%s" % week_ago.strftime("%m/%d/%y")
 
     job_info = _run_bash(sacct).split("\n")[2:]
     for line in job_info:
@@ -123,7 +137,7 @@ def source():
                    is_slow=False,
                    running_time=job_item[5],
                    time_limit=job_item[6],
-                   nodelist=_parse_node_list(job_item[8]),
+                   nodelist=job_item[8],
                    log="N/A")
         job_list.append(job)
 
@@ -139,6 +153,9 @@ def detail(jobs, executor):
     Returns:
         A dictionary contains detailed info of jobs
     """
+    if not jobs:
+        return []
+
     loop = asyncio.get_event_loop()
     tasks = [loop.run_in_executor(executor, _job_detail, job) for job in jobs]
     loop.run_until_complete(asyncio.wait(tasks))
