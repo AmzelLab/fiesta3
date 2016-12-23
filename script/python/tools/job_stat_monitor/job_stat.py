@@ -120,7 +120,9 @@ def source():
     week_ago = datetime.today() - timedelta(days=3)
     sacct += " --starttime=%s" % week_ago.strftime("%m/%d/%y")
 
-    job_info = _run_bash(sacct).split("\n")[2:]
+    # Combine source
+    job_info.extend(_run_bash(sacct).split("\n")[2:])
+
     for line in job_info:
         job_item = line.split()
 
