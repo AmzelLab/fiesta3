@@ -18,8 +18,8 @@ import sys
 
 __author__ = 'davislong198833@gmail.com (Yunlong Liu)'
 
-_TIMEOUT = 10
-_SUPERVISING_PART = ["pretestgp", "gpu", "gpuscav"]
+_TIMEOUT = 30
+_SUPERVISING_PART = ["gpu", "gpuscav", "bw-gpu"]
 
 
 def _run_bash(command_string):
@@ -67,12 +67,16 @@ def _job_detail(job):
         return job
 
     # First we want to run "scontrol show jobid" on every job.
-    scontrol = "scontrol show jobid %s | grep StdOut" % job["job_id"]
+    scontrol = "scontrol show jobid %s | grep -E 'StdOut|Command'" % job[
+        "job_id"]
     output = _run_bash(scontrol)
-    log_path = output.strip().split('=')[1]
+
+    scontrol_info = output.strip().split()
+    job["log"] = scontrol_info[0] + "\n\n"
+    log_path = scontrol_info[1].split('=')[1]
 
     # Second we want to fetch out the last 10 lines of the log
-    job["log"] = _run_bash("tail %s" % log_path)
+    job["log"] += _run_bash("tail %s" % log_path)
 
     # if we are on gpu, we should always check whether our jobs
     # are running slow
@@ -179,7 +183,7 @@ def dump_json(jobs):
 def main():
     """Main program to invoke job stats query.
     """
-    executor = ThreadPoolExecutor(max_workers=8)
+    executor = ThreadPoolExecutor(max_workers=32)
     dump_json(detail(source(), executor))
     executor.shutdown()
 
