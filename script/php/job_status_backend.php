@@ -6,7 +6,7 @@ $PERIOD = 180;
 function query() {
   $remote_stat = shell_exec('ssh -o ControlMaster=no marcc ./job_stat.py');
 
-  if ($remote_stat) {
+  if ($remote_stat == NULL) {
     /* keep the main loop running until the network resumes. */
     return;
   }
