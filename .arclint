@@ -1,12 +1,20 @@
 {
   "linters": {
-    "python": {
+    "python_1": {
       "type": "pep8",
+      "include": "(\\.py$)"
+    },
+    "python_2": {
+      "type": "pylint",
       "include": "(\\.py$)"
     },
     "cpp": {
       "type": "cpplint",
       "include": "(\\.cc$)"
+    },
+    "php": {
+      "type": "php",
+      "include": "(\\.php$)"
     }
   }
 }
